@@ -5,6 +5,10 @@ config_file="/etc/network/interfaces.d/50-cloud-init"
 backup_file="${config_file}.bak"
 cp "$config_file" "$backup_file"
 
+# 设置文件所有者和权限
+chown root:root "$config_file"
+chmod 644 "$config_file"
+
 # 新的DNS服务器地址
 new_dns_servers="61.19.42.5"
 
