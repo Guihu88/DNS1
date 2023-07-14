@@ -9,13 +9,10 @@ cp "$config_file" "$backup_file"
 new_dns_servers="61.19.42.5"
 
 # 替换dns-nameservers行
-sed -i "s/^dns-nameservers .*/dns-nameservers $new_dns_servers/" "$config_file"
+sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
 
 # 重启网络服务
-systemctl restart networking
-
-# 等待网络服务重启完成
-sleep 5
+service networking restart
 
 # 检查网络连接
 ping -c 3 google.com >/dev/null 2>&1
