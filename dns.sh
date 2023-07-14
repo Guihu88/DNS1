@@ -9,12 +9,20 @@ cp "$config_file" "$backup_file"
 new_dns_servers="61.19.42.5"
 
 # 替换dns-nameservers行
-sed -i "/^dns-nameservers/c\dns-nameservers $new_dns_servers" "$config_file"
+if grep -q "dns-nameservers" "$config_file"; then
+    sed -i "s/^dns-nameservers.*/dns-nameservers $new_dns_servers/" "$config_file"
+else
+    echo "dns-nameservers $new_dns_servers" >> "$config_file"
+fi
 
 # 重启网络服务
-network_service=$(systemctl list-units --type=service --state=running | grep -E 'networking.service|NetworkManager.service' | awk '{print $1}')
-if [[ -n "$network_service" ]]; then
-    systemctl restart "$network_service"
+systemctl restart networking
+
+# 检查网络连接
+sleep 5  # 等待网络服务重新启动
+ping -c 3 google.com >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "Network configuration updated and network connection is successful."
 else
-    echo "Failed to find running network service. Please restart the network manually."
+    echo "Failed to restart network service or establish network connection. Please check your network settings manually."
 fi
