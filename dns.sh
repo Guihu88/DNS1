@@ -12,9 +12,9 @@ new_dns_servers="61.19.42.5"
 sed -i "/^dns-nameservers/c\dns-nameservers $new_dns_servers" "$config_file"
 
 # 重启网络服务
-network_service="networking"
-if systemctl is-active --quiet "$network_service"; then
+network_service=$(systemctl list-units --type=service --state=running | grep -E 'networking.service|NetworkManager.service' | awk '{print $1}')
+if [[ -n "$network_service" ]]; then
     systemctl restart "$network_service"
 else
-    systemctl start "$network_service"
+    echo "Failed to find running network service. Please restart the network manually."
 fi
