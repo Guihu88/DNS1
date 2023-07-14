@@ -26,7 +26,7 @@ systemctl restart networking
 sleep 5  # 等待网络服务重新启动
 ping -c 3 google.com >/dev/null 2>&1
 if [ $? -eq 0 ]; then
-    echo "Network configuration updated and network connection is successful."
+    echo "DNS更换成功并且网络连接正常。"
 else
-    echo "Failed to restart network service or establish network connection. Please check your network settings manually."
+    echo "无法重新启动网络服务或建立网络连接。请手动检查网络设置。"
 fi
