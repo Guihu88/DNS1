@@ -6,7 +6,7 @@ backup_file="${config_file}.bak"
 cp "$config_file" "$backup_file"
 
 # 新的DNS服务器地址
-new_dns_servers="61.19.42.5"
+new_dns_servers="61.19.42.5 8.8.8.8"
 
 # 替换dns-nameservers行
 sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
