@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the custom DNS servers you want to use
-dns_server1="61.19.42.5"
+dns_server1="115.164.146.10"
 dns_server2="8.8.8.8"
 
 # Check if the script is running with root privileges
