@@ -1,31 +1,27 @@
 #!/bin/bash
 
-# 新的配置文件路径和名称
-config_file="/etc/network/interfaces.d/50-cloud-init"
+# 新的DNS服务器地址
 new_dns_servers="61.19.42.5"
 
-# 检查配置文件是否存在
-if [ ! -f "$config_file" ]; then
-    # 如果文件不存在，创建新的配置文件并添加内容
-    echo "dns-nameservers $new_dns_servers" | sudo tee "$config_file" >/dev/null
-else
-    # 备份原始配置文件
-    backup_file="${config_file}.bak"
-    sudo cp "$config_file" "$backup_file"
-    
-    # 替换dns-nameservers行
-    if grep -q "^ *dns-nameservers" "$config_file"; then
-        sudo sed -i "/^ *dns-nameservers/c\dns-nameservers $new_dns_servers" "$config_file"
-    else
-        echo "dns-nameservers $new_dns_servers" | sudo tee -a "$config_file" >/dev/null
-    fi
+# 检查是否存在网络配置文件
+network_config_file="/etc/sysconfig/network-scripts/ifcfg-eth0"  # 根据网络接口名称调整
+if [ ! -f "$network_config_file" ]; then
+    echo "Error: Network configuration file '$network_config_file' not found."
+    exit 1
 fi
+
+# 备份原始配置文件
+backup_file="${network_config_file}.bak"
+cp "$network_config_file" "$backup_file"
+
+# 更新DNS服务器地址
+sed -i "/^ *DNS1=/c\DNS1=$new_dns_servers" "$network_config_file"
 
 # 重启网络服务
 if command -v systemctl &>/dev/null; then
-    sudo systemctl restart networking
+    sudo systemctl restart network
 else
-    sudo service networking restart
+    sudo service network restart
 fi
 
 # 等待一段时间，确保网络服务有足够的时间来启动
