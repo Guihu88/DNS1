@@ -1,17 +1,23 @@
 #!/bin/bash
 
-# Define the custom DNS servers you want to use
-dns_server1="115.164.146.10"
-dns_server2="8.8.8.8"
+# 备份原始配置文件
+config_file="/etc/network/interfaces.d/50-cloud-init"
+backup_file="${config_file}.bak"
+cp "$config_file" "$backup_file"
 
-# Check if the script is running with root privileges
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root." 
-  exit 1
+# 新的DNS服务器地址
+new_dns_servers="61.19.42.5"
+
+# 替换dns-nameservers行
+sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
+
+# 重启网络服务
+service networking restart
+
+# 检查网络连接
+ping -c 3 google.com >/dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "DNS更换成功并且网络连接正常。"
+else
+    echo "无法重新启动网络服务或建立网络连接。请手动检查网络设置。"
 fi
-
-# Replace the existing nameserver entries in /etc/resolv.conf with the custom DNS servers
-echo "nameserver $dns_server1" > /etc/resolv.conf
-echo "nameserver $dns_server2" >> /etc/resolv.conf
-
-# Rest of the script remains the same...
