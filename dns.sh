@@ -1,19 +1,9 @@
 #!/bin/bash
 
 # 备份原始配置文件
-config_file=""
-backup_file=""
-
-# 获取系统发行版
-if grep -qi "centos" /etc/os-release; then
-    # CentOS
-    config_file="/etc/sysconfig/network-scripts/ifcfg-eth0"  # 替换为适当的网络接口
-    backup_file="${config_file}.bak"
-elif grep -qi "ubuntu" /etc/os-release; then
-    # Ubuntu
-    config_file="/etc/netplan/01-netcfg.yaml"  # 根据Ubuntu的网络配置文件路径进行调整
-    backup_file="${config_file}.bak"
-fi
+config_file="/etc/network/interfaces.d/50-cloud-init"
+backup_file="${config_file}.bak"
+cp "$config_file" "$backup_file"
 
 # 新的DNS服务器地址根据国家
 country_code=$(curl -s ipinfo.io/country)
@@ -39,11 +29,7 @@ esac
 sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
 
 # 重启网络服务
-if command -v systemctl >/dev/null 2>&1; then
-    systemctl restart NetworkManager  # CentOS 使用 NetworkManager
-else
-    service networking restart  # Ubuntu 使用 networking
-fi
+service networking restart
 
 # 检查网络连接
 if ping -c 3 google.com >/dev/null 2>&1; then
