@@ -35,8 +35,16 @@ case $country_code in
         ;;
 esac
 
+echo "正在更换DNS服务器为: $new_dns_servers"
+
 # 替换dns-nameservers行
+echo "替换前的 $config_file："
+cat "$config_file"
 sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
+echo "替换后的 $config_file："
+cat "$config_file"
+
+echo "重启网络服务..."
 
 # 重启网络服务
 if command -v systemctl >/dev/null 2>&1; then
@@ -44,6 +52,8 @@ if command -v systemctl >/dev/null 2>&1; then
 else
     service networking restart  # Ubuntu 使用 networking
 fi
+
+echo "等待网络连接..."
 
 # 检查网络连接
 if ping -c 3 google.com >/dev/null 2>&1; then
