@@ -1,57 +1,63 @@
 #!/bin/bash
 
-# 自动获取适当的 DNS 配置文件路径
-dns_config_files=("/etc/resolv.conf" "/etc/network/interfaces" "/etc/sysconfig/network-scripts/ifcfg-eth0" "/etc/netplan/01-netcfg.yaml")
+# 创建自定义DNS配置文件路径
+custom_dns_path="/etc/custom_dns"
+custom_dns_file="$custom_dns_path/custom_dns.conf"
 
-found_config_file=""
-for file in "${dns_config_files[@]}"; do
-    if [ -f "$file" ]; then
-        found_config_file="$file"
-        break
-    fi
-done
-
-if [ -z "$found_config_file" ]; then
-    echo "找不到适当的 DNS 配置文件。"
-    exit 1
-fi
+# 创建自定义DNS配置文件
+mkdir -p "$custom_dns_path"
+echo "nameserver 8.8.8.8" > "$custom_dns_file"  # 默认的DNS服务器地址
 
 # 自动获取国家代码
 country_code=$(curl -s ipinfo.io/country)
-
-# 自动选择适当的 DNS 服务器
 case $country_code in
     TH)
-        new_dns_servers="61.19.42.5 8.8.8.8"
+        echo "nameserver 61.19.42.5" >> "$custom_dns_file"
+        echo "nameserver 8.8.8.8" >> "$custom_dns_file"
         ;;
     PH)
-        new_dns_servers="121.58.203.4 8.8.8.8"
+        echo "nameserver 121.58.203.4" >> "$custom_dns_file"
+        echo "nameserver 8.8.8.8" >> "$custom_dns_file"
         ;;
     MY)
-        new_dns_servers="49.236.193.35 203.176.144.12 8.8.8.8"
+        echo "nameserver 49.236.193.35" >> "$custom_dns_file"
+        echo "nameserver 203.176.144.12" >> "$custom_dns_file"
+        echo "nameserver 8.8.8.8" >> "$custom_dns_file"
         ;;
     ID)
-        new_dns_servers="8.8.8.8"
-        ;;
-    *)
-        new_dns_servers="默认的DNS服务器地址"
+        echo "nameserver 8.8.8.8" >> "$custom_dns_file"
         ;;
 esac
 
-# 更新 DNS 配置
-echo "正在更换 DNS 服务器为: $new_dns_servers"
-sed -i "/^ *nameserver /c\nameserver $new_dns_servers" "$found_config_file"
+# 自动适配操作系统并替换DNS配置文件路径
+if [ -f "/etc/network/interfaces" ]; then
+    config_file="/etc/network/interfaces"
+elif [ -f "/etc/sysconfig/network-scripts/ifcfg-eth0" ]; then
+    config_file="/etc/sysconfig/network-scripts/ifcfg-eth0"
+elif [ -f "/etc/netplan/01-netcfg.yaml" ]; then
+    config_file="/etc/netplan/01-netcfg.yaml"
+else
+    echo "无法找到适当的DNS配置文件路径。"
+    exit 1
+fi
+
+# 备份原始配置文件
+backup_file="${config_file}.bak"
+cp "$config_file" "$backup_file"
+
+# 替换dns-nameservers行
+sed -i "/^ *dns-nameservers /c\dns-nameservers $custom_dns_file" "$config_file"
 
 # 重启网络服务
 if command -v systemctl >/dev/null 2>&1; then
     systemctl restart NetworkManager  # CentOS 使用 NetworkManager
 else
-    service networking restart  # Ubuntu 使用 networking
+    service networking restart  # Ubuntu 和 Debian 使用 networking
 fi
 
 # 检查网络连接
 if ping -c 3 google.com >/dev/null 2>&1; then
-    echo "DNS 更换成功并且网络连接正常。"
+    echo "DNS更换成功并且网络连接正常。"
 else
     echo "无法重新启动网络服务或建立网络连接。请手动检查网络设置。"
 fi
