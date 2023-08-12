@@ -30,8 +30,14 @@ case $country_code in
         ;;
 esac
 
-# 配置网络接口使用自定义DNS服务器
-nmcli con mod "Wired Connection 1" ipv4.dns "$custom_dns_file"
-nmcli con up "Wired Connection 1"
+# 获取第一个活动的网络连接名称
+active_connection=$(nmcli con show --active | awk 'NR==2{print $1}')
 
-echo "网络接口 'Wired Connection 1' 配置为使用自定义DNS服务器。"
+# 配置网络连接使用自定义DNS服务器
+if [ -n "$active_connection" ]; then
+    nmcli con mod "$active_connection" ipv4.dns "$custom_dns_file"
+    nmcli con up "$active_connection"
+    echo "网络接口 '$active_connection' 配置为使用自定义DNS服务器。"
+else
+    echo "未找到活动的网络连接。请手动检查网络连接。"
+fi
