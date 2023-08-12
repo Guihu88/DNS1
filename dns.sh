@@ -1,20 +1,19 @@
 #!/bin/bash
 
-# 自动检测网络管理工具
-if command -v nmcli >/dev/null 2>&1; then
-    network_manager="nmcli"
-elif command -v networkctl >/dev/null 2>&1; then
-    network_manager="networkctl"
-else
-    echo "无法确定网络管理工具。"
-    exit 1
-fi
-
 # 自动获取适当的 DNS 配置文件路径
-if [ "$network_manager" == "nmcli" ]; then
-    config_file=$(nmcli -t -f NAME,TYPE connection show --active | grep ethernet | cut -d':' -f1)
-elif [ "$network_manager" == "networkctl" ]; then
-    config_file=$(networkctl list --lines=2 | tail -1 | awk '{print $1}')
+dns_config_files=("/etc/resolv.conf" "/etc/network/interfaces" "/etc/sysconfig/network-scripts/ifcfg-eth0" "/etc/netplan/01-netcfg.yaml")
+
+found_config_file=""
+for file in "${dns_config_files[@]}"; do
+    if [ -f "$file" ]; then
+        found_config_file="$file"
+        break
+    fi
+done
+
+if [ -z "$found_config_file" ]; then
+    echo "找不到适当的 DNS 配置文件。"
+    exit 1
 fi
 
 # 自动获取国家代码
@@ -41,12 +40,13 @@ esac
 
 # 更新 DNS 配置
 echo "正在更换 DNS 服务器为: $new_dns_servers"
-if [ "$network_manager" == "nmcli" ]; then
-    nmcli connection modify "$config_file" ipv4.dns "$new_dns_servers"
-    nmcli connection down "$config_file" && nmcli connection up "$config_file"
-elif [ "$network_manager" == "networkctl" ]; then
-    sed -i "/^ *DNS=/c\DNS=$new_dns_servers" "/etc/systemd/network/$config_file.network"
-    systemctl restart systemd-networkd
+sed -i "/^ *nameserver /c\nameserver $new_dns_servers" "$found_config_file"
+
+# 重启网络服务
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl restart NetworkManager  # CentOS 使用 NetworkManager
+else
+    service networking restart  # Ubuntu 使用 networking
 fi
 
 # 检查网络连接
