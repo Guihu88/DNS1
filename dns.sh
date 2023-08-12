@@ -30,17 +30,8 @@ case $country_code in
         ;;
 esac
 
-# 获取网络接口名称
-interface=$(ip route | grep default | awk '{print $5}')
-
 # 配置网络接口使用自定义DNS服务器
-nmcli con mod "$interface" ipv4.dns "$custom_dns_file"
-echo "网络接口 $interface 配置为使用自定义DNS服务器。"
+nmcli con mod "Wired Connection 1" ipv4.dns "$custom_dns_file"
+nmcli con up "Wired Connection 1"
 
-# 断开并重新启动网络连接
-nmcli con down "$interface" && nmcli con up "$interface"
-if [ $? -eq 0 ]; then
-    echo "网络连接重新启动成功。DNS更换成功并且网络连接正常。"
-else
-    echo "无法重新启动网络连接。请手动检查网络设置。"
-fi
+echo "网络接口 'Wired Connection 1' 配置为使用自定义DNS服务器。"
