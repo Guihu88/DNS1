@@ -34,6 +34,6 @@ interface=$(ip route | grep default | awk '{print $5}')
 
 # 配置网络接口使用自定义DNS服务器
 nmcli con mod "$interface" ipv4.dns "$custom_dns_file"
-nmcli con up "$interface"
+nmcli con down "$interface" && nmcli con up "$interface"
 
 echo "网络接口 $interface 配置为使用自定义DNS服务器。"
