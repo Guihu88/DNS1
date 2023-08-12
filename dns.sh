@@ -1,15 +1,20 @@
 #!/bin/bash
 
-# 自动检测网络接口和操作系统
+# 自动检测网络管理工具
 if command -v nmcli >/dev/null 2>&1; then
-    config_file=$(nmcli device show | grep 'IP4.ADDRESS' | awk '{print $2}')
-    network_manager=true
+    network_manager="nmcli"
 elif command -v networkctl >/dev/null 2>&1; then
-    config_file=$(networkctl status | grep 'Address' | awk '{print $2}')
-    network_manager=false
+    network_manager="networkctl"
 else
-    echo "无法确定网络接口和网络管理工具。"
+    echo "无法确定网络管理工具。"
     exit 1
+fi
+
+# 自动获取适当的 DNS 配置文件路径
+if [ "$network_manager" == "nmcli" ]; then
+    config_file=$(nmcli -t -f NAME,TYPE connection show --active | grep ethernet | cut -d':' -f1)
+elif [ "$network_manager" == "networkctl" ]; then
+    config_file=$(networkctl list --lines=2 | tail -1 | awk '{print $1}')
 fi
 
 # 自动获取国家代码
@@ -35,13 +40,12 @@ case $country_code in
 esac
 
 # 更新 DNS 配置
-if [ "$network_manager" = true ]; then
-    echo "正在更换 DNS 服务器为: $new_dns_servers"
+echo "正在更换 DNS 服务器为: $new_dns_servers"
+if [ "$network_manager" == "nmcli" ]; then
     nmcli connection modify "$config_file" ipv4.dns "$new_dns_servers"
     nmcli connection down "$config_file" && nmcli connection up "$config_file"
-else
-    echo "正在更换 DNS 服务器为: $new_dns_servers"
-    sed -i "/^ *nameservers:/c\      nameservers: [$new_dns_servers]" "$config_file"
+elif [ "$network_manager" == "networkctl" ]; then
+    sed -i "/^ *DNS=/c\DNS=$new_dns_servers" "/etc/systemd/network/$config_file.network"
     systemctl restart systemd-networkd
 fi
 
