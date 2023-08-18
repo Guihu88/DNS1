@@ -2,15 +2,21 @@
 
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
+echo "检测到的国家：$country"
 
-# 定义 DNS 服务器列表
+# 定义 DNS 服务器
 declare -A dns_servers
-dns_servers["PH"]="121.58.203.4 8.8.8.8"
-dns_servers["VN"]="183.91.184.14 8.8.8.8"
-dns_servers["MY"]="49.236.193.35 8.8.8.8"
-dns_servers["TH"]="61.19.42.5 8.8.8.8"
-dns_servers["ID"]="116.212.101.10 116.212.100.98"
-dns_servers["TW"]="202.43.162.37 168.95.1.1"
+dns_servers=(
+    ["PH"]="121.58.203.4 8.8.8.8"
+    ["VN"]="183.91.184.14 8.8.8.8"
+    ["MY"]="49.236.193.35 8.8.8.8"
+    ["TH"]="61.19.42.5 8.8.8.8"
+    ["ID"]="116.212.101.10 116.212.100.98"
+    ["TW"]="168.95.1.1 8.8.8.8"
+)
+
+# 获取本机的公共 IP 地址
+public_ip=$(curl -s https://api64.ipify.org)
 
 # 设置 DNS 服务器函数
 set_dns_servers() {
@@ -26,38 +32,34 @@ set_dns_servers() {
         echo "DNS 设置已成功更新。"
     else
         echo "更新 DNS 设置失败。"
-        exit 1
     fi
-}
-
-# 禁用 NetworkManager 更新 resolv.conf
-disable_networkmanager_dns_update() {
-    echo -e "[main]\ndns=none" | sudo tee /etc/NetworkManager/NetworkManager.conf
-    sudo systemctl restart NetworkManager
 }
 
 # 清除 DNS 缓存函数
 flush_dns_cache() {
+    echo "清除 DNS 缓存..."
     sudo systemd-resolve --flush-caches
     if [ $? -eq 0 ]; then
-        echo "清除 DNS 缓存成功。"
+        echo "DNS 缓存已清除。"
     else
         echo "清除 DNS 缓存失败。"
     fi
 }
 
-# 执行主函数
+# 主函数
 main() {
-    echo "检测到的国家：$country"
+    case $country in
+        "PH"|"VN"|"MY"|"TH"|"ID"|"TW")
+            set_dns_servers
+            flush_dns_cache
+            ;;
+        *)
+            echo "未识别的国家或不在列表中。"
+            exit 1
+            ;;
+    esac
 
-    # 设置 DNS 服务器
-    set_dns_servers
-
-    # 禁用 NetworkManager 更新 resolv.conf
-    disable_networkmanager_dns_update
-
-    # 清除 DNS 缓存
-    flush_dns_cache
+    echo "检测完成。"
 }
 
 # 执行主函数
