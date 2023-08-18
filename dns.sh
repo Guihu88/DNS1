@@ -1,39 +1,48 @@
 #!/bin/bash
 
-# 备份原始配置文件
-config_file="/etc/network/interfaces.d/50-cloud-init"
-backup_file="${config_file}.bak"
-cp "$config_file" "$backup_file"
+country=$(curl -s https://ipinfo.io/country)
+echo "检测到的国家：$country"
 
-# 新的DNS服务器地址根据国家
-country_code=$(curl -s ipinfo.io/country)
-case $country_code in
-    TH)
-        new_dns_servers="61.19.42.5 8.8.8.8"
+case $country in
+    "PH")
+        dns_servers=("121.58.203.4" "8.8.8.8")
         ;;
-    PH)
-        new_dns_servers="121.58.203.4 8.8.8.8"
+    "VN")
+        dns_servers=("183.91.184.14" "8.8.8.8")
         ;;
-    MY)
-        new_dns_servers="49.236.193.35 203.176.144.12 8.8.8.8"
+    "MY")
+        dns_servers=("49.236.193.35" "8.8.8.8")
         ;;
-    ID)
-        new_dns_servers="202.169.252.190 202.180.54.97 111.223.252.27 122.50.5.146 103.161.128.128 103.161.128.130 8.8.8.8"
+    "TH")
+        dns_servers=("61.19.42.5" "8.8.8.8")
+        ;;
+    "ID")
+        dns_servers=("103.107.71.139" "103.134.220.158")
         ;;
     *)
-        new_dns_servers="默认的DNS服务器地址"
+        echo "未识别的国家或不在列表中。"
+        exit 1
         ;;
 esac
 
-# 替换dns-nameservers行
-sed -i "/^ *dns-nameservers /c\dns-nameservers $new_dns_servers" "$config_file"
+echo "清空原有 DNS 设置"
+echo -n | tee /etc/resolv.conf
 
-# 重启网络服务
-service networking restart
+echo "设置 DNS 服务器"
+for dns_server in "${dns_servers[@]}"; do
+    echo "nameserver $dns_server" >> /etc/resolv.conf
+done
 
-# 检查网络连接
-if ping -c 3 google.com >/dev/null 2>&1; then
-    echo "DNS更换成功并且网络连接正常。"
+if [ $? -eq 0 ]; then
+    echo "DNS 设置已成功更新。"
+    
+    echo "重新启动网络服务..."
+    service network-manager restart
+    
+    echo "清除 DNS 缓存..."
+    systemd-resolve --flush-caches
+    
+    echo "DNS 更改已生效。"
 else
-    echo "无法重新启动网络服务或建立网络连接。请手动检查网络设置。"
+    echo "更新 DNS 设置失败。"
 fi
