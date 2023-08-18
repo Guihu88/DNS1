@@ -23,21 +23,21 @@ case $country in
 esac
 
 echo "清空原有 DNS 设置"
-echo -n | sudo tee /etc/resolv.conf
+echo -n | tee /etc/resolv.conf
 
 echo "设置 DNS 服务器"
 for dns_server in "${dns_servers[@]}"; do
-    echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
+    echo "nameserver $dns_server" >> /etc/resolv.conf
 done
 
 if [ $? -eq 0 ]; then
     echo "DNS 设置已成功更新。"
     
     echo "重新启动网络服务..."
-    sudo service network-manager restart
+    service network-manager restart
     
     echo "清除 DNS 缓存..."
-    sudo systemd-resolve --flush-caches
+    systemd-resolve --flush-caches
     
     echo "DNS 更改已生效。"
 else
