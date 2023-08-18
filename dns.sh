@@ -26,45 +26,70 @@ case $country in
 esac
 
 echo "清空原有 DNS 设置"
-echo -n | tee /etc/resolv.conf
+echo -n | sudo tee /etc/resolv.conf
 
 echo "设置 DNS 服务器"
 for dns_server in "${dns_servers[@]}"; do
-    echo "nameserver $dns_server" >> /etc/resolv.conf
+    echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
 done
 
-if [ $? -eq 0 ]; then
-    echo "DNS 设置已成功更新。"
-    
-    echo "重新启动网络服务..."
-    service network-manager restart
-    
-    echo "清除 DNS 缓存..."
-    systemd-resolve --flush-caches
-    
-    echo "DNS 更改已生效。"
-    
-    # 自动搭建 Shadowsocks
-    echo "开始自动搭建 Shadowsocks"
-    # 在这里添加自动搭建 Shadowsocks 的命令
-    # 示例命令，需要替换为实际命令
-    ss_port=$(shuf -i 10000-65535 -n 1)  # 生成随机端口
-    ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)  # 生成随机密码
-    ss_method="aes-256-gcm"
-    
-    # 写入 Shadowsocks 配置文件
-    echo "{
+if [ $? -ne 0 ]; then
+    echo "更新 DNS 设置失败。"
+    exit 1
+fi
+
+echo "DNS 设置已成功更新。"
+
+echo "重新启动网络服务..."
+sudo systemctl restart NetworkManager
+
+if [ $? -ne 0 ]; then
+    echo "重新启动网络服务失败。"
+    exit 1
+fi
+
+echo "网络服务已重新启动。"
+
+echo "清除 DNS 缓存..."
+sudo systemd-resolve --flush-caches
+
+if [ $? -ne 0 ]; then
+    echo "清除 DNS 缓存失败。"
+    exit 1
+fi
+
+echo "DNS 缓存已清除。"
+
+# 自动搭建 Shadowsocks
+echo "开始自动搭建 Shadowsocks"
+
+ss_port=$(shuf -i 10000-65535 -n 1)  # 生成随机端口
+ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)  # 生成随机密码
+ss_method="aes-256-gcm"
+
+# 写入 Shadowsocks 配置文件
+echo "{
     \"server\":\"$public_ip\",
     \"server_port\":$ss_port,
     \"password\":\"$ss_password\",
     \"method\":\"$ss_method\"
-}" | tee /etc/shadowsocks/config.json
-    
-    if [ $? -eq 0 ]; then
-        echo "Shadowsocks 已成功搭建。"
-    else
-        echo "搭建 Shadowsocks 失败。"
-    fi
-else
-    echo "更新 DNS 设置失败。"
+}" | sudo tee /etc/shadowsocks/config.json
+
+if [ $? -ne 0 ]; then
+    echo "写入 Shadowsocks 配置文件失败。"
+    exit 1
 fi
+
+echo "Shadowsocks 配置文件已写入。"
+
+# 启动 Shadowsocks
+sudo systemctl start shadowsocks-libev
+
+if [ $? -ne 0 ]; then
+    echo "启动 Shadowsocks 失败。"
+    exit 1
+fi
+
+echo "Shadowsocks 已成功搭建并启动。"
+
+echo "完成。"
