@@ -9,6 +9,7 @@ case $country in
         ;;
     "VN")
         dns_server="183.91.184.14"
+        dns_server="8.8.8.8"
         ;;
     "MY")
         dns_server="49.236.193.35"
