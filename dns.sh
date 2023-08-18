@@ -50,8 +50,8 @@ if [ $? -eq 0 ]; then
     ss_password="your_password"
     ss_method="aes-256-gcm"
     
-    # 编码为 ss:// 链接
-    ss_config="ss://$(echo -n "$ss_method:$ss_password@$ss_ip:$ss_port" | base64 -w 0)"
+    # 编码为自定义链接
+    ss_config="ss://$ss_ip:$ss_port:$ss_method:$ss_password"
     echo "Shadowsocks 配置链接：$ss_config"
     
     if [ $? -eq 0 ]; then
