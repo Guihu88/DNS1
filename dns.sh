@@ -66,8 +66,8 @@ main() {
 
     echo -e "\033[1;33m定制IPLC线路：广港、沪日、沪美、京德\033[0m"
     echo -e "\033[1;33m定制TIKTOK网络：美国、泰国、越南、菲律宾等\033[0m"
-    echo -e "\033[1;31mtg:rocloudcc\033[0m"
-    echo "检测完成。如有问题，请联系我：联系方式TG:rocloudcc"
+    echo -e "\033[1;31m如有问题，请联系我：联系方式TG:rocloudcc\033[0m"
+    echo "检测完成。"
 }
 
 # 执行主函数
