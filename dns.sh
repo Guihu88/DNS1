@@ -28,8 +28,7 @@ update_resolv_conf() {
 
     done
         echo -e ""
-        echo -e ""
-        echo -e ""
+        
 }
 
 # 方案二：修改 /etc/network/interfaces.d/50-cloud-init
@@ -46,6 +45,8 @@ flush_dns_cache() {
     if [ $? -eq 0 ]; then
         echo -e "\033[1;32m清除 DNS 缓存成功。\033[0m"
     fi
+    echo -e ""
+    
 }
 
 # 主函数
