@@ -22,7 +22,7 @@ dns_servers=(
 
 # 方案一：修改 /etc/resolv.conf
 update_resolv_conf() {
-    echo "设置 DNS 服务器"
+    echo -e "\033[1;32m执行任务\033[0m"
     for dns_server in ${dns_servers[$country]}; do
         echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
     done
