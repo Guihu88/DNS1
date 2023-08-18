@@ -8,7 +8,7 @@ case $country in
         dns_servers=("121.58.203.4")
         ;;
     "VN")
-        dns_servers=("183.91.184.14" "8.8.8.8")
+        dns_servers=("183.91.184.14 8.8.8.8")
         ;;
     "MY")
         dns_servers=("49.236.193.35")
