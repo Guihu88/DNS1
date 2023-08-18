@@ -11,11 +11,11 @@ ss_method="aes-256-gcm"
 # 设置 DNS 服务器函数
 set_dns_servers() {
     echo "清空原有 DNS 设置"
-    echo -n | sudo tee /etc/resolv.conf
+    echo -n | su -c "tee /etc/resolv.conf"
 
     echo "设置 DNS 服务器"
     for dns_server in "${dns_servers[@]}"; do
-        echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
+        echo "nameserver $dns_server" | su -c "tee -a /etc/resolv.conf"
     done
 
     if [ $? -ne 0 ]; then
@@ -46,7 +46,7 @@ create_ss_config() {
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
-    }" | sudo tee "$ss_config_file"
+    }" | su -c "tee $ss_config_file"
     
     if [ $? -ne 0 ]; then
         echo "写入 Shadowsocks 配置文件失败。"
