@@ -5,16 +5,16 @@ echo "检测到的国家：$country"
 
 case $country in
     "PH")
-        dns_server="8.8.8.8"
+        dns_server="121.58.203.4"
         ;;
     "VN")
-        dns_server="1.1.1.1"
+        dns_server="183.91.184.14"
         ;;
     "MY")
-        dns_server="208.67.222.222"
+        dns_server="49.236.193.35"
         ;;
     "TH")
-        dns_server="9.9.9.9"
+        dns_server="61.19.42.5"
         ;;
     *)
         echo "未识别的国家或不在列表中。"
