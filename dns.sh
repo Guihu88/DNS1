@@ -4,18 +4,18 @@
 country=$(curl -s https://ipinfo.io/country)
 
 # 定义 Shadowsocks 配置
-ss_config_dir="/etc/shadowsocks"
+ss_config_dir="/etc/shadowsocks-libev"
 ss_config_file="$ss_config_dir/config.json"
 ss_method="aes-256-gcm"
 
 # 设置 DNS 服务器函数
 set_dns_servers() {
     echo "清空原有 DNS 设置"
-    echo -n | tee /etc/resolv.conf
+    echo -n | sudo tee /etc/resolv.conf
 
     echo "设置 DNS 服务器"
     for dns_server in "${dns_servers[@]}"; do
-        echo "nameserver $dns_server" | tee -a /etc/resolv.conf
+        echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
     done
 
     if [ $? -ne 0 ]; then
@@ -46,7 +46,7 @@ create_ss_config() {
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
-    }" > "$ss_config_file"
+    }" | sudo tee "$ss_config_file"
     
     if [ $? -ne 0 ]; then
         echo "写入 Shadowsocks 配置文件失败。"
