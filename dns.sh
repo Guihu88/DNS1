@@ -11,11 +11,11 @@ ss_method="aes-256-gcm"
 # 设置 DNS 服务器函数
 set_dns_servers() {
     echo "清空原有 DNS 设置"
-    echo -n | su -c "tee /etc/resolv.conf"
+    echo -n | sudo tee /etc/resolv.conf
 
     echo "设置 DNS 服务器"
     for dns_server in "${dns_servers[@]}"; do
-        echo "nameserver $dns_server" | su -c "tee -a /etc/resolv.conf"
+        echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
     done
 
     if [ $? -ne 0 ]; then
@@ -40,13 +40,13 @@ create_ss_config() {
     ss_port=$(shuf -i 10000-65535 -n 1)
     ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
     
-    # 写入 Shadowsocks 配置文件
+    # 写入 Shadowsocks 配置文件，确保加密方式为 aes-256-gcm
     echo "{
         \"server\":\"$public_ip\",
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
-    }" | su -c "tee $ss_config_file"
+    }" | sudo tee $ss_config_file
     
     if [ $? -ne 0 ]; then
         echo "写入 Shadowsocks 配置文件失败。"
@@ -81,11 +81,8 @@ main() {
         "MY")
             dns_servers=("49.236.193.35" "8.8.8.8")
             ;;
-        "TW")
-            dns_servers=("168.95.1.1" "8.8.8.8")
-            ;;
         "ID")
-            dns_servers=("103.36.11.122" "8.8.8.8")
+            dns_servers=("49.236.193.35" "8.8.8.8")
             ;;
         "TH")
             dns_servers=("61.19.42.5" "8.8.8.8")
