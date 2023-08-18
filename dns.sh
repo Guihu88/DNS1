@@ -2,7 +2,7 @@
 
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
-echo -e "\033[1;33m检测到的国家：$country\033[0m"
+echo -e "\033[1;33m检测到的国家：\033[1;32m$country\033[0m"
 
 # 定义 DNS 服务器
 declare -A dns_servers
@@ -24,7 +24,7 @@ dns_servers=(
 update_resolv_conf() {
     echo "设置 DNS 服务器"
     for dns_server in ${dns_servers[$country]}; do
-        echo -e "\033[1;32mnameserver $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
+        echo -e "\033[1;31mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
     done
 }
 
