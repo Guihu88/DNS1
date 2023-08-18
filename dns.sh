@@ -1,16 +1,11 @@
 #!/bin/bash
 
-# 获取本机的公共 IP 地址
-public_ip=$(curl -s https://api64.ipify.org)
-
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
 
 # 定义 Shadowsocks 配置
 ss_config_dir="/etc/shadowsocks"
 ss_config_file="$ss_config_dir/config.json"
-ss_port=$(shuf -i 10000-65535 -n 1)  # 生成随机端口
-ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)  # 生成随机密码
 ss_method="aes-256-gcm"
 
 # 设置 DNS 服务器函数
@@ -31,10 +26,45 @@ set_dns_servers() {
     echo "DNS 设置已成功更新。"
 }
 
-# 安装依赖函数
-install_dependencies() {
+# 安装 Shadowsocks 函数
+install_shadowsocks() {
     sudo apt-get update
     sudo apt-get install -y shadowsocks-libev
+}
+
+# 创建 Shadowsocks 配置文件函数
+create_ss_config() {
+    sudo mkdir -p "$ss_config_dir"
+    
+    # 生成随机端口和密码
+    ss_port=$(shuf -i 10000-65535 -n 1)
+    ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+    
+    # 写入 Shadowsocks 配置文件
+    echo "{
+        \"server\":\"$public_ip\",
+        \"server_port\":$ss_port,
+        \"password\":\"$ss_password\",
+        \"method\":\"$ss_method\"
+    }" | sudo tee "$ss_config_file"
+    
+    if [ $? -ne 0 ]; then
+        echo "写入 Shadowsocks 配置文件失败。"
+        exit 1
+    fi
+}
+
+# 启动 Shadowsocks 函数
+start_shadowsocks() {
+    sudo systemctl start shadowsocks-libev
+    
+    if [ $? -ne 0 ]; then
+        echo "启动 Shadowsocks 失败。"
+        exit 1
+    fi
+    
+    echo "Shadowsocks 已成功搭建并启动。"
+    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$public_ip:$ss_port" | base64 -w 0)"
 }
 
 # 主函数
@@ -60,38 +90,20 @@ main() {
             ;;
     esac
     
+    # 获取本机的公共 IP 地址
+    public_ip=$(curl -s https://api64.ipify.org)
+    
     # 设置 DNS 服务器
     set_dns_servers
     
-    # 安装 Shadowsocks 依赖
-    install_dependencies
+    # 安装 Shadowsocks
+    install_shadowsocks
     
-    # 创建 Shadowsocks 配置文件目录
-    sudo mkdir -p "$ss_config_dir"
+    # 创建 Shadowsocks 配置文件
+    create_ss_config
     
-    # 写入 Shadowsocks 配置文件
-    echo "{
-        \"server\":\"$public_ip\",
-        \"server_port\":$ss_port,
-        \"password\":\"$ss_password\",
-        \"method\":\"$ss_method\"
-    }" | sudo tee "$ss_config_file"
-    
-    if [ $? -ne 0 ]; then
-        echo "写入 Shadowsocks 配置文件失败。"
-        exit 1
-    fi
-    
-    # 启动 Shadowsocks 服务
-    sudo systemctl start shadowsocks-libev
-    
-    if [ $? -ne 0 ]; then
-        echo "启动 Shadowsocks 失败。"
-        exit 1
-    fi
-    
-    echo "Shadowsocks 已成功搭建并启动。"
-    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$public_ip:$ss_port" | base64 -w 0)"
+    # 启动 Shadowsocks
+    start_shadowsocks
 }
 
 # 执行主函数
