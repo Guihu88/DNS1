@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 获取本机的公共 IP 地址
+public_ip=$(curl -s https://api64.ipify.org)
+
 country=$(curl -s https://ipinfo.io/country)
 echo "检测到的国家：$country"
 
@@ -45,14 +48,17 @@ if [ $? -eq 0 ]; then
     echo "开始自动搭建 Shadowsocks"
     # 在这里添加自动搭建 Shadowsocks 的命令
     # 示例命令，需要替换为实际命令
-    ss_ip="your_server_ip"
-    ss_port=12345
-    ss_password="your_password"
+    ss_port=$(shuf -i 10000-65535 -n 1)  # 生成随机端口
+    ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)  # 生成随机密码
     ss_method="aes-256-gcm"
     
-    # 编码为自定义链接
-    ss_config="ss://$ss_ip:$ss_port:$ss_method:$ss_password"
-    echo "Shadowsocks 配置链接：$ss_config"
+    # 写入 Shadowsocks 配置文件
+    echo "{
+    \"server\":\"$public_ip\",
+    \"server_port\":$ss_port,
+    \"password\":\"$ss_password\",
+    \"method\":\"$ss_method\"
+}" | tee /etc/shadowsocks/config.json
     
     if [ $? -eq 0 ]; then
         echo "Shadowsocks 已成功搭建。"
