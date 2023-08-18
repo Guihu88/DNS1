@@ -36,13 +36,13 @@ set_dns_servers() {
     if [ $? -eq 0 ]; then
         echo "DNS 设置已成功更新。"
     else
-        echo "更新 DNS 设置失败。"
+        echo -e "\033[1;31m更新 DNS 设置失败。\033[0m"
         # 尝试修改 /etc/network/interfaces.d/50-cloud-init
         if grep -q "dns-nameservers" /etc/network/interfaces.d/50-cloud-init; then
             sudo sed -i '/dns-nameservers/d' /etc/network/interfaces.d/50-cloud-init
-            echo "修改 /etc/network/interfaces.d/50-cloud-init 成功。"
+            echo -e "\033[1;33m修改 /etc/network/interfaces.d/50-cloud-init 成功。\033[0m"
         else
-            echo "修改 /etc/network/interfaces.d/50-cloud-init 失败。"
+            echo -e "\033[1;31m修改 /etc/network/interfaces.d/50-cloud-init 失败。\033[0m"
         fi
     fi
 }
@@ -54,7 +54,7 @@ flush_dns_cache() {
     if [ $? -eq 0 ]; then
         echo "DNS 缓存已清除。"
     else
-        echo "清除 DNS 缓存失败。"
+        echo -e "\033[1;31m清除 DNS 缓存失败。\033[0m"
     fi
 }
 
@@ -66,14 +66,14 @@ main() {
             flush_dns_cache
             ;;
         *)
-            echo "未识别的国家或不在列表中。"
+            echo -e "\033[1;31m未识别的国家或不在列表中。\033[0m"
             exit 1
             ;;
     esac
 
-    echo -e "\033[1;33m定制IPLC线路：广港、沪日、沪美、京德\033[0m"
-    echo -e "\033[1;33m定制TIKTOK网络：美国、泰国、越南、菲律宾等\033[0m"
-    echo -e "\033[1;31m如有问题，请联系我：联系方式TG:rocloudcc\033[0m"
+    echo -e "\033[1;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
+    echo -e "\033[1;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
+    echo -e "\033[1;31m如有问题，请联系我：\033[1;33m联系方式TG:rocloudcc\033[0m"
     echo -e "\033[1;32m检测完成。\033[0m"
 }
 
