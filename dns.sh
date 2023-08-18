@@ -46,7 +46,7 @@ create_ss_config() {
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
-    }" | tee "$ss_config_file"
+    }" > "$ss_config_file"
     
     if [ $? -ne 0 ]; then
         echo "写入 Shadowsocks 配置文件失败。"
@@ -89,9 +89,6 @@ main() {
             dns_servers=("49.236.193.35" "8.8.8.8")
             ;;
         "TH")
-            dns_servers=("61.19.42.5" "8.8.8.8")
-            ;;
-        "ID")
             dns_servers=("61.19.42.5" "8.8.8.8")
             ;;
         *)
