@@ -4,7 +4,6 @@
 country=$(curl -s https://ipinfo.io/country)
 echo -e ""
 echo -e ""
-echo -e ""
 echo -e "\033[1;33m检测到的国家：\033[1;31m$country\033[0m"  ✅
 
 # 定义 DNS 服务器
