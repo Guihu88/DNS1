@@ -13,7 +13,6 @@ case $country in
         ;;
     "MY")
         dns_server="49.236.193.35"
-        dns_server="8.8.8.8"
         ;;
     "TH")
         dns_server="61.19.42.5"
