@@ -5,16 +5,16 @@ echo "检测到的国家：$country"
 
 case $country in
     "PH")
-        dns_servers=("121.58.203.4")
+        dns_servers=("121.58.203.4" "8.8.8.8")
         ;;
     "VN")
-        dns_servers=("183.91.184.14 8.8.8.8")
+        dns_servers=("183.91.184.14" "8.8.8.8")
         ;;
     "MY")
-        dns_servers=("49.236.193.35")
+        dns_servers=("49.236.193.35" "8.8.8.8")
         ;;
     "TH")
-        dns_servers=("61.19.42.5")
+        dns_servers=("61.19.42.5" "8.8.8.8")
         ;;
     *)
         echo "未识别的国家或不在列表中。"
@@ -22,7 +22,10 @@ case $country in
         ;;
 esac
 
-echo "设置 DNS 服务器为 ${dns_servers[@]}"
+echo "清空原有 DNS 设置"
+echo -n | sudo tee /etc/resolv.conf
+
+echo "设置 DNS 服务器"
 for dns_server in "${dns_servers[@]}"; do
     echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
 done
