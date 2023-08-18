@@ -2,7 +2,7 @@
 
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
-echo -e "\033[1;33m检测到的国家：\033[1;31m$country\033[0m""${Font_Green}  ✅${Font_Suffix}"
+echo -e "\033[1;33m检测到的国家：\033[1;31m$country\033[0m""  ✅
 
 # 定义 DNS 服务器
 declare -A dns_servers
