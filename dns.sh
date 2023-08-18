@@ -36,13 +36,15 @@ install_shadowsocks() {
 create_ss_config() {
     sudo mkdir -p "$ss_config_dir"
     
-    # 生成随机端口和密码
-    ss_port=$(shuf -i 10000-65535 -n 1)
+    # 生成随机密码
     ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+    
+    # 获取本机的公共 IP 地址
+    public_ip=$(curl -s https://api64.ipify.org)
     
     # 写入 Shadowsocks 配置文件
     echo "{
-        \"server\":\"0.0.0.0\",
+        \"server\":\"$public_ip\",
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
@@ -64,6 +66,7 @@ start_shadowsocks() {
     fi
     
     echo "Shadowsocks 已成功搭建并启动。"
+    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$public_ip:$ss_port" | base64 -w 0)"
 }
 
 # 主函数
@@ -94,6 +97,9 @@ main() {
             exit 1
             ;;
     esac
+    
+    # 生成随机端口
+    ss_port=$(shuf -i 10000-65535 -n 1)
     
     # 设置 DNS 服务器
     set_dns_servers
