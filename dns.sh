@@ -11,11 +11,11 @@ ss_method="aes-256-gcm"
 # 设置 DNS 服务器函数
 set_dns_servers() {
     echo "清空原有 DNS 设置"
-    echo -n | sudo tee /etc/resolv.conf
+    echo -n | tee /etc/resolv.conf
 
     echo "设置 DNS 服务器"
     for dns_server in "${dns_servers[@]}"; do
-        echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf
+        echo "nameserver $dns_server" | tee -a /etc/resolv.conf
     done
 
     if [ $? -ne 0 ]; then
@@ -28,8 +28,8 @@ set_dns_servers() {
 
 # 安装 Shadowsocks 函数
 install_shadowsocks() {
-    sudo apt-get update
-    sudo apt-get install -y shadowsocks-libev
+    sudo apt update
+    sudo apt install -y shadowsocks-libev
 }
 
 # 创建 Shadowsocks 配置文件函数
@@ -40,13 +40,13 @@ create_ss_config() {
     ss_port=$(shuf -i 10000-65535 -n 1)
     ss_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
     
-    # 写入 Shadowsocks 配置文件，确保加密方式为 aes-256-gcm
+    # 写入 Shadowsocks 配置文件
     echo "{
         \"server\":\"$public_ip\",
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
-    }" | sudo tee $ss_config_file
+    }" | tee "$ss_config_file"
     
     if [ $? -ne 0 ]; then
         echo "写入 Shadowsocks 配置文件失败。"
@@ -64,7 +64,14 @@ start_shadowsocks() {
     fi
     
     echo "Shadowsocks 已成功搭建并启动。"
-    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$public_ip:$ss_port" | base64 -w 0)"
+    
+    # 从配置文件中获取值
+    ss_server=$(grep -oP '(?<=^"server":")[^"]*' "$ss_config_file")
+    ss_port=$(grep -oP '(?<=^"server_port":)[0-9]*' "$ss_config_file")
+    ss_password=$(grep -oP '(?<=^"password":")[^"]*' "$ss_config_file")
+    ss_method=$(grep -oP '(?<=^"method":")[^"]*' "$ss_config_file")
+    
+    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$ss_server:$ss_port" | base64 -w 0)"
 }
 
 # 主函数
@@ -81,10 +88,10 @@ main() {
         "MY")
             dns_servers=("49.236.193.35" "8.8.8.8")
             ;;
-        "ID")
-            dns_servers=("49.236.193.35" "8.8.8.8")
-            ;;
         "TH")
+            dns_servers=("61.19.42.5" "8.8.8.8")
+            ;;
+        "ID")
             dns_servers=("61.19.42.5" "8.8.8.8")
             ;;
         *)
