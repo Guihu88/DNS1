@@ -40,6 +40,25 @@ if [ $? -eq 0 ]; then
     systemd-resolve --flush-caches
     
     echo "DNS 更改已生效。"
+    
+    # 自动搭建 Shadowsocks
+    echo "开始自动搭建 Shadowsocks"
+    # 在这里添加自动搭建 Shadowsocks 的命令
+    # 示例命令，需要替换为实际命令
+    ss_ip="your_server_ip"
+    ss_port=12345
+    ss_password="your_password"
+    ss_method="aes-256-gcm"
+    
+    # 编码为 ss:// 链接
+    ss_config="ss://$(echo -n "$ss_method:$ss_password@$ss_ip:$ss_port" | base64 -w 0)"
+    echo "Shadowsocks 配置链接：$ss_config"
+    
+    if [ $? -eq 0 ]; then
+        echo "Shadowsocks 已成功搭建。"
+    else
+        echo "搭建 Shadowsocks 失败。"
+    fi
 else
     echo "更新 DNS 设置失败。"
 fi
