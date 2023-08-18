@@ -2,7 +2,7 @@
 
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
-echo -e "\033[1;32m检测到的国家：$country\033[0m"
+echo -e "\033[1;33m检测到的国家：$country\033[0m"
 
 # 定义 DNS 服务器
 declare -A dns_servers
@@ -69,8 +69,8 @@ main() {
         echo -e "\033[1;31m任务失败。\033[0m"
     fi
 
-    echo -e "\033[1;32m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
-    echo -e "\033[1;32m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
+    echo -e "\033[1;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
+    echo -e "\033[1;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
     echo -e "\033[1;33m如有问题，请联系我：\033[1;32m联系方式TG:rocloudcc\033[0m"
     echo -e "\033[1;32m检测完成。\033[0m"
 }
