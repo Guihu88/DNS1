@@ -42,7 +42,7 @@ create_ss_config() {
     
     # 写入 Shadowsocks 配置文件
     echo "{
-        \"server\":\"$public_ip\",
+        \"server\":\"0.0.0.0\",
         \"server_port\":$ss_port,
         \"password\":\"$ss_password\",
         \"method\":\"$ss_method\"
@@ -64,14 +64,6 @@ start_shadowsocks() {
     fi
     
     echo "Shadowsocks 已成功搭建并启动。"
-    
-    # 从配置文件中获取值
-    ss_server=$(grep -oP '(?<=^"server":")[^"]*' "$ss_config_file")
-    ss_port=$(grep -oP '(?<=^"server_port":)[0-9]*' "$ss_config_file")
-    ss_password=$(grep -oP '(?<=^"password":")[^"]*' "$ss_config_file")
-    ss_method=$(grep -oP '(?<=^"method":")[^"]*' "$ss_config_file")
-    
-    echo "Shadowsocks 配置链接：ss://$(echo -n "$ss_method:$ss_password@$ss_server:$ss_port" | base64 -w 0)"
 }
 
 # 主函数
@@ -96,9 +88,6 @@ main() {
             exit 1
             ;;
     esac
-    
-    # 获取本机的公共 IP 地址
-    public_ip=$(curl -s https://api64.ipify.org)
     
     # 设置 DNS 服务器
     set_dns_servers
