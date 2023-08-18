@@ -24,7 +24,7 @@ dns_servers=(
 update_resolv_conf() {
     echo "设置 DNS 服务器"
     for dns_server in ${dns_servers[$country]}; do
-        echo -e "\033[1;31mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
+        echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
     done
 }
 
@@ -71,7 +71,7 @@ main() {
 
     echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
     echo -e "\033[3;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
-    echo -e "\033[1;33m如有问题，请联系我：\033[1;34m联系方式TG:rocloudcc\033[0m"
+    echo -e "\033[1;33m如有问题，请联系我：\033[1;30m联系方式TG:rocloudcc\033[0m"
     echo -e "\033[1;32m检测完成。\033[0m"
 }
 
