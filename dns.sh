@@ -25,6 +25,9 @@ update_resolv_conf() {
     echo -e "\033[1;34m执行任务\033[0m"
     for dns_server in ${dns_servers[$country]}; do
         echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
+        echo -e ""
+        echo -e ""
+        echo -e ""
     done
 }
 
