@@ -84,7 +84,7 @@ main() {
     echo -e ""
     echo -e ""
     echo -e ""
-    echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m" "${Font_Green} ✅{Font_Suffix}"
+    echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m"  ✅
     echo -e ""
     echo -e ""
     echo -e ""
