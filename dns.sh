@@ -2,6 +2,13 @@
 
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
+log_file="/var/log/change_dns.log"  # 日志文件路径
+
+# 设置日志输出
+exec > >(tee -i $log_file)
+exec 2>&1
+
+# 输出检测到的国家
 echo -e "\n\n\033[1;33m检测到的国家：\033[1;31m$country\033[0m ✅"
 
 # 定义 DNS 服务器
@@ -35,18 +42,33 @@ restart_network_manager() {
     su -c "systemctl restart NetworkManager"
 }
 
+# 执行需要sudo权限的命令
+execute_with_sudo() {
+    if [ -f /etc/sudoers ]; then
+        su -c "sudo $1"
+    else
+        su -c "$1"
+    fi
+}
+
 # 主函数
 main() {
     case $country in
         "PH"|"VN"|"MY"|"TH"|"ID"|"TW"|"CN"|"HK"|"JP"|"US"|"DE")
             update_resolv_conf
+            execute_with_sudo "mv /etc/resolv.conf.new /etc/resolv.conf"
             restart_network_manager
-            echo -e "\033[1;32m修改DNS成功，已重启NetworkManager。\033[0m"
-            echo -e "\n\n================================================\n"
-            echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德等\033[0m"
-            echo -e "\033[3;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
-            echo -e "\n================================================\n\n"
-            echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m ✅\n\n"
+
+            if [ $? -eq 0 ]; then
+                echo -e "\033[1;32m修改DNS成功，已重启NetworkManager。\033[0m"
+                echo -e "\n\n================================================\n"
+                echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德等\033[0m"
+                echo -e "\033[3;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
+                echo -e "\n================================================\n\n"
+                echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m ✅\n\n"
+            else
+                echo -e "\033[1;31m任务失败，尝试方案二。\033[0m"
+            fi
             ;;
         *)
             echo -e "\033[1;31m未识别的国家或不在列表中。\033[0m"
