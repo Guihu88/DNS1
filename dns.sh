@@ -12,7 +12,7 @@ exec 2>&1
 echo -e ""
 echo -e ""
 echo -e "\033[3;33m检测到的国家：\033[1;32m$country\033[0m" ✅
-
+echo -e "================================================"
 # 定义 DNS 服务器
 declare -A dns_servers
 dns_servers=(
