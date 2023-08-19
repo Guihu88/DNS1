@@ -9,6 +9,8 @@ exec > >(tee -i $log_file)
 exec 2>&1
 
 # 输出检测到的国家
+echo -e ""
+echo -e ""
 echo -e "\033[3;33m检测到的国家：\033[1;32m$country\033[0m" ✅
 
 # 定义 DNS 服务器
@@ -88,10 +90,9 @@ main() {
             if check_custom_dns; then
                 execute_with_sudo "mv $resolv_conf_path.new $resolv_conf_path"
                 restart_network_manager
-
+    echo -e "================================================"
                 if [ $? -eq 0 ]; then
-                    echo -e "更新DNS成功"
-    echo -e ""
+    echo -e "\033[1;32m 更新DNS成功 \033[0m"
     echo -e "================================================"
     echo -e ""
     echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
