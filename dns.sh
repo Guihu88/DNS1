@@ -2,7 +2,7 @@
 
 # 检查权限
 if [[ $(id -u) -ne 0 ]]; then
-    echo "需要使用 root 权限运行此脚本"
+    echo -e "\033[1;31m需要使用 root 权限运行此脚本\033[0m"
     exit 1
 fi
 
