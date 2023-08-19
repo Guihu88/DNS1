@@ -41,7 +41,7 @@ resolv_conf_path="/etc/resolv.conf"
 
 # 修改 /etc/resolv.conf
 update_resolv_conf() {
-    echo -e "执行任务：修改 $resolv_conf_path"
+    echo -e "执行任务"
     echo -e "# New DNS Servers" | sudo tee $resolv_conf_path.new
     for dns_server in ${dns_servers[$country]}; do
         echo "nameserver $dns_server" | sudo tee -a $resolv_conf_path.new
