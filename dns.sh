@@ -91,11 +91,20 @@ main() {
 
                 if [ $? -eq 0 ]; then
                     echo -e "修改DNS成功，已重启NetworkManager。"
-                    echo -e "\n\n================================================\n"
-                    echo -e "定制IPLC线路：广港、沪日、沪美、京德等"
-                    echo -e "定制TIKTOK网络：美国、泰国、越南、菲律宾等"
-                    echo -e "\n================================================\n\n"
-                    echo -e "NDS已成功更换成目标国家：$country ✅\n\n"
+    echo -e ""
+    echo -e "================================================"
+    echo -e ""
+    echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
+    echo -e "\033[3;33mTG群聊：\033[1;31mhttps://t.me/rocloudiplc\033[0m"
+    echo -e "\033[3;33m定制TIKTOK网络：\033[1;32m美国、泰国、越南、菲律宾等\033[0m"
+    echo -e "\033[1;33m如有问题，请联系我：\033[1;35m联系方式TG：rocloudcc\033[0m"
+    echo -e ""
+    echo -e "================================================"
+    echo -e ""
+    echo -e ""
+    echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m"  ✅
+    echo -e ""
+    echo -e ""
                 else
                     echo -e "任务失败，尝试方案二。"
                     execute_with_sudo "update_interfaces"
