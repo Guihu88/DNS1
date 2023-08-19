@@ -14,17 +14,6 @@ echo -e "\n\n\033[1;33m检测到的国家：\033[1;31m$country\033[0m ✅"
 # 定义 DNS 服务器
 declare -A dns_servers
 dns_servers=(
-    ["PH"]="121.58.203.4 8.8.8.8"
-    ["VN"]="183.91.184.14 8.8.8.8"
-    ["MY"]="49.236.193.35 8.8.8.8"
-    ["TH"]="61.19.42.5 8.8.8.8"
-    ["ID"]="202.146.128.3 202.146.128.7 202.146.131.12"
-    ["TW"]="168.95.1.1 8.8.8.8"
-    ["CN"]="111.202.100.123 101.95.120.109 101.95.120.106"
-    ["HK"]="1.1.1.1 8.8.8.8"
-    ["JP"]="133.242.1.1 133.242.1.2"
-    ["US"]="1.1.1.1 8.8.8.8"
-    ["DE"]="217.172.224.47 194.150.168.168"
     # ... 添加其他国家的DNS服务器
 )
 
@@ -34,18 +23,20 @@ update_resolv_conf() {
     for dns_server in ${dns_servers[$country]}; do
         echo "nameserver $dns_server" | su -c "tee /etc/resolv.conf.new"
     done
+    echo "执行命令：mv /etc/resolv.conf.new /etc/resolv.conf"
     su -c "mv /etc/resolv.conf.new /etc/resolv.conf"
 }
 
 # 重启 NetworkManager
 restart_network_manager() {
+    echo "执行命令：systemctl restart NetworkManager"
     su -c "systemctl restart NetworkManager"
 }
 
 # 执行需要sudo权限的命令
 execute_with_sudo() {
     if [ -f /etc/sudoers ]; then
-        su -c "sudo $1"
+        su -c "echo <your_sudo_password> | sudo -S $1"
     else
         su -c "$1"
     fi
