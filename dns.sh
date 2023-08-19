@@ -25,12 +25,15 @@ dns_servers=(
 # 方案一：修改 /etc/resolv.conf
 update_resolv_conf() {
     echo -e "\033[1;34m执行任务\033[0m"
+
+    # 清除 /etc/resolv.conf 文件的现有内容
+    sudo sh -c "echo > /etc/resolv.conf"
+
+    # 添加新的 DNS 服务器
     for dns_server in ${dns_servers[$country]}; do
         echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
-
     done
-        echo -e ""
-        
+    echo -e ""
 }
 
 # 方案二：修改 /etc/network/interfaces.d/50-cloud-init
