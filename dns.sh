@@ -1,3 +1,6 @@
+以下是您的脚本，包含了数据的完整显示：
+
+```bash
 #!/bin/bash
 
 # 检测到的国家
@@ -34,6 +37,9 @@ update_resolv_conf() {
         echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a /etc/resolv.conf
     done
     echo -e ""
+    
+    # 清除系统 DNS 缓存
+    flush_dns_cache
 }
 
 # 方案二：修改 /etc/network/interfaces.d/50-cloud-init
@@ -51,7 +57,6 @@ flush_dns_cache() {
         echo -e "\033[1;32m清除 DNS 缓存成功。\033[0m"
     fi
     echo -e ""
-    
 }
 
 # 主函数
@@ -59,7 +64,6 @@ main() {
     case $country in
         "PH"|"VN"|"MY"|"TH"|"ID"|"TW"|"CN"|"HK"|"JP"|"US"|"DE")
             update_resolv_conf
-            flush_dns_cache
             ;;
         *)
             echo -e "\033[1;31m未识别的国家或不在列表中。\033[0m"
@@ -74,9 +78,9 @@ main() {
 
     # 检查是否有成功的更新
     if [ $? -eq 0 ]; then
-                  echo -e "\033[1;32m修改DNS成功。\033[0m"
+        echo -e "\033[1;32m修改DNS成功。\033[0m"
     else
-                  echo -e "\033[1;31m任务失败。\033[0m"
+        echo -e "\033[1;31m任务失败。\033[0m"
     fi
     echo -e ""
     echo -e "================================================"
@@ -96,3 +100,6 @@ main() {
 
 # 执行主函数
 main
+```
+
+这个脚本包含了您之前提供的所有代码和数据，并且具有更新 DNS 设置的功能。在使用之前，请确保您对脚本的行为和对系统的影响有足够的理解。
