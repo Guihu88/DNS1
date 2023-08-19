@@ -1,24 +1,8 @@
 #!/bin/bash
 
-# 检查权限
-if [[ $(id -u) -ne 0 ]]; then
-    echo -e "\033[1;31m需要使用 root 权限运行此脚本\033[0m"
-    exit 1
-fi
-
-# 检测到的操作系统类型
-os_type=$(uname -s)
-
-# 配置文件路径数组，根据不同的操作系统类型和发行版添加适当的路径
-declare -A config_file_paths
-config_file_paths=(
-    ["Linux"]="/etc/resolv.conf"
-    # 添加其他操作系统类型的路径
-)
-
 # 检测到的国家
 country=$(curl -s https://ipinfo.io/country)
-echo -e "\033[1;33m检测到的国家：\033[1;31m$country\033[0m" ✅
+echo -e "\033[1;33m检测到的国家：\033[1;31m$country\033[0m ✅"
 
 # 定义 DNS 服务器
 declare -A dns_servers
@@ -40,14 +24,14 @@ update_resolv_conf() {
     echo -e "\033[1;34m执行任务\033[0m"
 
     # 备份配置文件
-    sudo cp "${config_file_paths[$os_type]}" "${config_file_paths[$os_type]}.bak"
+    sudo cp /etc/resolv.conf /etc/resolv.conf.bak
 
     # 清除配置文件内容
-    sudo sh -c "echo > ${config_file_paths[$os_type]}"
+    sudo sh -c "echo > /etc/resolv.conf"
 
     # 添加新的 DNS 服务器
     for dns_server in ${dns_servers[$country]}; do
-        echo "nameserver $dns_server" | sudo tee -a "${config_file_paths[$os_type]}" > /dev/null
+        echo "nameserver $dns_server" | sudo tee -a /etc/resolv.conf > /dev/null
     done
 
     # 清除系统 DNS 缓存
@@ -59,16 +43,10 @@ flush_dns_cache() {
     if [ $? -eq 0 ]; then
         echo -e "\033[1;32m清除 DNS 缓存成功。\033[0m"
     fi
-    echo ""
+    echo -e ""
 }
 
 main() {
-    # 检查操作系统类型是否支持
-    if [[ -z "${config_file_paths[$os_type]}" ]]; then
-        echo -e "\033[1;31m不支持的操作系统类型。\033[0m"
-        exit 1
-    fi
-
     case $country in
         "PH"|"VN"|"MY"|"TH"|"ID"|"TW"|"CN"|"HK"|"JP"|"US"|"DE")
             update_resolv_conf
@@ -90,7 +68,7 @@ main() {
     echo -e "================================================"
     echo -e ""
     echo -e ""
-    echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m" ✅
+    echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m ✅"
     echo -e ""
     echo -e ""
 }
