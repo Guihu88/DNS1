@@ -75,7 +75,7 @@ update_interfaces() {
 # 执行需要sudo权限的命令
 execute_with_sudo() {
     if [ -f /etc/sudoers ]; then
-        sudo -S $1 <<< "your_sudo_password_here"
+        sudo -S $1 <<< "gss520..."
     else
         $1
     fi
