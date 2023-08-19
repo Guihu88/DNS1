@@ -14,6 +14,17 @@ echo -e "\n\n检测到的国家：$country ✅"
 # 定义 DNS 服务器
 declare -A dns_servers
 dns_servers=(
+    ["PH"]="121.58.203.4 8.8.8.8"
+    ["VN"]="183.91.184.14 8.8.8.8"
+    ["MY"]="49.236.193.35 8.8.8.8"
+    ["TH"]="61.19.42.5 8.8.8.8"
+    ["ID"]="202.146.128.3 202.146.128.7 202.146.131.12"
+    ["TW"]="168.95.1.1 8.8.8.8"
+    ["CN"]="111.202.100.123 101.95.120.109 101.95.120.106"
+    ["HK"]="1.1.1.1 8.8.8.8"
+    ["JP"]="133.242.1.1 133.242.1.2"
+    ["US"]="1.1.1.1 8.8.8.8"
+    ["DE"]="217.172.224.47 194.150.168.168"
     # ... 添加其他国家的DNS服务器
 )
 
@@ -33,13 +44,13 @@ update_resolv_conf() {
 
 # 检查 /etc/resolv.conf 是否已更新为自定义的DNS
 check_custom_dns() {
-    local found_custom_dns=false
-    while IFS= read -r line; do
-        if [[ $line == "nameserver ${dns_servers[$country]}" ]]; then
-            found_custom_dns=true
+    local found_custom_dns=true
+    for dns_server in ${dns_servers[$country]}; do
+        if ! grep -q "nameserver $dns_server" "$resolv_conf_path"; then
+            found_custom_dns=false
             break
         fi
-    done < "$resolv_conf_path"
+    done
     
     $found_custom_dns
 }
@@ -48,13 +59,6 @@ check_custom_dns() {
 restart_network_manager() {
     echo "执行命令：sudo systemctl restart NetworkManager"
     sudo systemctl restart NetworkManager
-}
-
-# 执行方案二
-execute_alternate_plan() {
-    update_interfaces
-    echo -e "任务失败，尝试方案二。"
-    update_interfaces
 }
 
 # 方案二：修改 /etc/network/interfaces.d/50-cloud-init
@@ -93,7 +97,8 @@ main() {
                     echo -e "\n================================================\n\n"
                     echo -e "NDS已成功更换成目标国家：$country ✅\n\n"
                 else
-                    execute_alternate_plan
+                    echo -e "任务失败，尝试方案二。"
+                    execute_with_sudo "update_interfaces"
                 fi
             else
                 echo -e "修改DNS失败，未找到自定义DNS。"
