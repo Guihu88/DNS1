@@ -100,7 +100,7 @@ main() {
                 execute_with_sudo "mv $resolv_conf_path.new $resolv_conf_path"
                 restart_network_manager
                 if [ $? -eq 0 ]; then
-                    echo -e "更新DNS成功"
+                    echo -e "\033[3;33m更新DNS成功\033[0m"
                     echo -e "================================================"
                     echo -e ""
                     echo -e "\033[3;33m定制IPLC线路：\033[1;32m广港、沪日、沪美、京德\033[0m"
