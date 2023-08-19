@@ -47,7 +47,7 @@ update_resolv_conf() {
 
     # 添加新的 DNS 服务器
     for dns_server in ${dns_servers[$country]}; do
-        echo -e "\033[1;34mnameserver \033[1;32m $dns_server\033[0m" | sudo tee -a "${config_file_paths[$os_type]}"
+        echo "nameserver $dns_server" | sudo tee -a "${config_file_paths[$os_type]}" > /dev/null
     done
 
     # 清除系统 DNS 缓存
@@ -59,7 +59,7 @@ flush_dns_cache() {
     if [ $? -eq 0 ]; then
         echo -e "\033[1;32m清除 DNS 缓存成功。\033[0m"
     fi
-    echo -e ""
+    echo ""
 }
 
 main() {
