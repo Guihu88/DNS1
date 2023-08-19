@@ -9,7 +9,7 @@ exec > >(tee -i $log_file)
 exec 2>&1
 
 # 输出检测到的国家
-echo -e "\n\n检测到的国家：$country ✅"
+echo -e "\033[3;33m检测到的国家：\033[1;32m$country\033[0m" ✅
 
 # 定义 DNS 服务器
 declare -A dns_servers
@@ -90,7 +90,7 @@ main() {
                 restart_network_manager
 
                 if [ $? -eq 0 ]; then
-                    echo -e "修改DNS成功，已重启NetworkManager。"
+                    echo -e "更新DNS成功"
     echo -e ""
     echo -e "================================================"
     echo -e ""
