@@ -8,6 +8,12 @@ log_file="/var/log/change_dns.log"  # 日志文件路径
 exec > >(tee -i $log_file)
 exec 2>&1
 
+# 检查是否存在sudo命令
+if ! command -v sudo &> /dev/null; then
+    echo "sudo 命令不可用，请确保已安装 sudo 并配置权限。"
+    exit 1
+fi
+
 # 输出检测到的国家
 echo -e ""
 echo -e ""
@@ -72,12 +78,16 @@ update_interfaces() {
     fi
 }
 
-# 执行需要sudo权限的命令
+# 执行需要sudo权限的命令（使用apt作为备用）
 execute_with_sudo() {
     if [ -f /etc/sudoers ]; then
-        sudo -S $1 <<< "gss520..."
+        sudo -S $1 <<< "your_sudo_password_here"
+    elif command -v apt &> /dev/null; then
+        echo "使用 apt 安装所需软件"
+        sudo apt install -y $1
     else
-        $1
+        echo "无法使用 sudo 或 apt 运行命令。"
+        exit 1
     fi
 }
 
