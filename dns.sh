@@ -35,22 +35,37 @@ resolv_conf_path="/etc/resolv.conf"
 update_resolv_conf() {
     echo -e "\033[1;34m执行任务：修改 $resolv_conf_path\033[0m"
     for dns_server in ${dns_servers[$country]}; do
-        echo "nameserver $dns_server" | su -c "tee $resolv_conf_path.new"
+        echo "nameserver $dns_server" | sudo tee $resolv_conf_path.new
     done
-    echo "执行命令：mv $resolv_conf_path.new $resolv_conf_path"
-    su -c "mv $resolv_conf_path.new $resolv_conf_path"
+    echo "执行命令：sudo mv $resolv_conf_path.new $resolv_conf_path"
+    sudo mv $resolv_conf_path.new $resolv_conf_path
 }
 
 # 重启 NetworkManager
 restart_network_manager() {
-    echo "执行命令：systemctl restart NetworkManager"
-    su -c "systemctl restart NetworkManager"
+    echo "执行命令：sudo systemctl restart NetworkManager"
+    sudo systemctl restart NetworkManager
+}
+
+# 执行方案二
+execute_alternate_plan() {
+    update_interfaces
+    echo -e "\033[1;31m任务失败，尝试方案二。\033[0m"
+    echo -e ""
+}
+
+# 方案二：修改 /etc/network/interfaces.d/50-cloud-init
+update_interfaces() {
+    if grep -q "dns-nameservers" /etc/network/interfaces.d/50-cloud-init; then
+        sudo sed -i '/dns-nameservers/d' /etc/network/interfaces.d/50-cloud-init
+        echo -e "\033[1;32m修改 /etc/network/interfaces.d/50-cloud-init 成功。\033[0m"
+    fi
 }
 
 # 执行需要sudo权限的命令
 execute_with_sudo() {
     if [ -f /etc/sudoers ]; then
-        echo "<your_sudo_password>" | sudo -S $1
+        sudo -S $1 <<< "your_sudo_password_here"
     else
         $1
     fi
@@ -72,7 +87,7 @@ main() {
                 echo -e "\n================================================\n\n"
                 echo -e "\033[1;32mNDS已成功更换成目标国家：\033[1;31m$country\033[0m ✅\n\n"
             else
-                echo -e "\033[1;31m任务失败，尝试方案二。\033[0m"
+                execute_alternate_plan
             fi
             ;;
         *)
