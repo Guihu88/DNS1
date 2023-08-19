@@ -28,7 +28,6 @@ dns_servers=(
     ["TH"]="61.19.42.5 8.8.8.8"
     ["ID"]="202.146.128.3 202.146.128.7 202.146.131.12"
     ["TW"]="168.95.1.1 8.8.8.8"
-    ["CN"]="111.202.100.123 101.95.120.109 101.95.120.106"
     ["HK"]="1.1.1.1 8.8.8.8"
     ["JP"]="133.242.1.1 133.242.1.2"
     ["US"]="1.1.1.1 8.8.8.8"
@@ -42,11 +41,9 @@ resolv_conf_path="/etc/resolv.conf"
 # 修改 /etc/resolv.conf
 update_resolv_conf() {
     echo -e "执行任务"
-    echo -e "# New DNS Servers" | sudo tee $resolv_conf_path.new
     for dns_server in ${dns_servers[$country]}; do
         echo "nameserver $dns_server" | sudo tee -a $resolv_conf_path.new
     done
-    echo "执行命令：sudo mv $resolv_conf_path.new $resolv_conf_path"
     sudo mv $resolv_conf_path.new $resolv_conf_path
 }
 
