@@ -1,17 +1,23 @@
 #!/bin/bash
 
-# 定义TikTok网站URL
-tiktok_url="https://www.tiktok.com/"
+# 设置字体颜色
+Font_Red="\033[31m"
+Font_Green="\033[32m"
+Font_Yellow="\033[33m"
+Font_Suffix="\033[0m"
 
-# 使用curl模拟浏览器请求获取TikTok网站内容
-tiktok_data=$(curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36" "$tiktok_url")
+# 获取IP地址
+local_ipv4=$(curl -4 -s --max-time 10 api64.ipify.org)
 
-# 从返回的内容中提取region信息
-region=$(echo "$tiktok_data" | grep -o '"region":"[^"]*' | sed 's/"region":"//')
+# 发送请求获取TikTok页面内容
+tiktok_page=$(curl -s --max-time 10 "https://www.tiktok.com/")
 
-# 输出归属地信息
+# 从页面内容中提取区域信息
+region=$(echo $tiktok_page | grep -o '"region":"[^"]*' | sed 's/"region":"//')
+
+# 判断是否成功获取区域信息
 if [ -n "$region" ]; then
-    echo "TikTok IP归属地：$region"
+    echo -e " Tiktok Region:\t\t${Font_Green}【${region}】${Font_Suffix}"
 else
-    echo "无法获取TikTok IP归属地信息。"
+    echo -e " Tiktok Region:\t\t${Font_Red}Failed${Font_Suffix}"
 fi
