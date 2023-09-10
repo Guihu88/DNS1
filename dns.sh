@@ -2,8 +2,13 @@
 
 # 检查是否已安装WireGuard，如果未安装，则自动安装
 if ! [ -x "$(command -v wg)" ]; then
+  echo "WireGuard未安装，正在自动安装..."
   sudo yum install -y epel-release
   sudo yum install -y wireguard-tools
+  if ! [ -x "$(command -v wg)" ]; then
+    echo "WireGuard安装失败，请手动安装WireGuard并重新运行脚本。"
+    exit 1
+  fi
 fi
 
 # 生成服务端私钥和公钥
