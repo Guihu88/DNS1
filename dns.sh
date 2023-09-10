@@ -1,8 +1,10 @@
 #!/bin/bash
 
-# 安装WireGuard
-sudo apt-get update
-sudo apt-get install -y wireguard-tools
+# 检查是否已安装WireGuard
+if ! [ -x "$(command -v wg)" ]; then
+  echo "WireGuard 未安装，请手动安装后重新运行脚本。"
+  exit 1
+fi
 
 # 生成服务端私钥和公钥
 server_private_key=$(wg genkey)
@@ -42,12 +44,6 @@ sudo sysctl -p
 # 启动WireGuard服务
 sudo wg-quick up wg0
 sudo systemctl enable wg-quick@wg0
-
-# 防火墙规则设置（适用于iptables）
-sudo iptables -A FORWARD -i wg0 -j ACCEPT
-sudo iptables -A FORWARD -o wg0 -j ACCEPT
-sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo apt-get install -y iptables-persistent
 
 # 完成
 echo "WireGuard服务器和客户端已成功安装和配置！"
