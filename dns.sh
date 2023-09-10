@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# 检查是否已安装WireGuard
+# 检查是否已安装WireGuard，如果未安装，则自动安装
 if ! [ -x "$(command -v wg)" ]; then
-  echo "WireGuard 未安装，请手动安装后重新运行脚本。"
-  exit 1
+  sudo yum install -y epel-release
+  sudo yum install -y wireguard-tools
 fi
 
 # 生成服务端私钥和公钥
@@ -44,6 +44,14 @@ sudo sysctl -p
 # 启动WireGuard服务
 sudo wg-quick up wg0
 sudo systemctl enable wg-quick@wg0
+
+# 防火墙规则设置（适用于iptables）
+sudo iptables -A FORWARD -i wg0 -j ACCEPT
+sudo iptables -A FORWARD -o wg0 -j ACCEPT
+sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+sudo yum install -y iptables-services
+sudo systemctl enable iptables
+sudo systemctl start iptables
 
 # 完成
 echo "WireGuard服务器和客户端已成功安装和配置！"
