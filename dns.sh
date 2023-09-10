@@ -1,86 +1,26 @@
 #!/bin/bash
 
-# 检查是否已安装WireGuard，如果未安装，则自动安装
-if ! [ -x "$(command -v wg)" ]; then
-  echo "WireGuard未安装，正在自动安装..."
-  sudo yum install -y epel-release
-  sudo yum install -y wireguard-tools
-  if ! [ -x "$(command -v wg)" ]; then
-    echo "WireGuard安装失败，请手动安装WireGuard并重新运行脚本。"
-    exit 1
-  fi
-fi
+# 安装依赖软件
+sudo yum install -y epel-release
+sudo yum install -y python3-pip
+pip3 install shadowsocks
 
-# 检查WireGuard内核模块是否已加载，如果未加载，则尝试自动安装
-if ! lsmod | grep wireguard &>/dev/null; then
-  echo "WireGuard内核模块未加载，正在尝试自动安装..."
-  
-  # 尝试安装WireGuard内核模块
-  if ! sudo yum install -y kmod-wireguard; then
-    echo "WireGuard内核模块安装失败，请手动安装WireGuard内核模块并重新运行脚本。"
-    exit 1
-  fi
-  
-  # 重新加载WireGuard内核模块
-  sudo modprobe wireguard
-  
-  # 检查WireGuard内核模块是否已加载
-  if ! lsmod | grep wireguard &>/dev/null; then
-    echo "WireGuard内核模块加载失败，请手动加载WireGuard内核模块并重新运行脚本。"
-    exit 1
-  fi
-fi
+# 配置Shadowsocks服务器
+echo "{
+  \"server\":\"0.0.0.0\",
+  \"server_port\":8388,
+  \"local_address\":\"127.0.0.1\",
+  \"local_port\":1080,
+  \"password\":\"YourPassword\",
+  \"timeout\":300,
+  \"method\":\"aes-256-cfb\"
+}" > /etc/shadowsocks.json
 
-# 生成服务端私钥和公钥
-server_private_key=$(wg genkey)
-server_public_key=$(echo "$server_private_key" | wg pubkey)
+# 启动Shadowsocks服务器
+ssserver -c /etc/shadowsocks.json -d start
 
-# 生成客户端私钥和公钥
-client_private_key=$(wg genkey)
-client_public_key=$(echo "$client_private_key" | wg pubkey)
-
-# 生成服务端和客户端配置文件
-cat <<EOF | sudo tee /etc/wireguard/wg0-server.conf
-[Interface]
-PrivateKey = $server_private_key
-Address = 10.0.0.1/24
-ListenPort = 51820
-
-[Peer]
-PublicKey = $client_public_key
-AllowedIPs = 10.0.0.2/32
-EOF
-
-cat <<EOF | sudo tee /etc/wireguard/wg0-client.conf
-[Interface]
-PrivateKey = $client_private_key
-Address = 10.0.0.2/24
-
-[Peer]
-PublicKey = $server_public_key
-AllowedIPs = 0.0.0.0/0
-Endpoint = $(curl -s ifconfig.me):51820
-EOF
-
-# 启用IP转发
-echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
-sudo sysctl -p
-
-# 启动WireGuard服务
-sudo wg-quick up wg0
-sudo systemctl enable wg-quick@wg0
-
-# 防火墙规则设置（适用于iptables）
-sudo iptables -A FORWARD -i wg0 -j ACCEPT
-sudo iptables -A FORWARD -o wg0 -j ACCEPT
-sudo iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-sudo yum install -y iptables-services
-sudo systemctl enable iptables
-sudo systemctl start iptables
-
-# 完成
-echo "WireGuard服务器和客户端已成功安装和配置！"
-
-# 输出客户端配置文件内容
-echo "以下是客户端配置文件内容："
-cat /etc/wireguard/wg0-client.conf
+echo "Shadowsocks服务器已启动。配置信息如下："
+echo "服务器地址：YourServerIP"
+echo "服务器端口：8388"
+echo "密码：YourPassword"
+echo "加密方法：aes-256-cfb"
