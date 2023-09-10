@@ -11,6 +11,26 @@ if ! [ -x "$(command -v wg)" ]; then
   fi
 fi
 
+# 检查WireGuard内核模块是否已加载，如果未加载，则尝试自动安装
+if ! lsmod | grep wireguard &>/dev/null; then
+  echo "WireGuard内核模块未加载，正在尝试自动安装..."
+  
+  # 尝试安装WireGuard内核模块
+  if ! sudo yum install -y kmod-wireguard; then
+    echo "WireGuard内核模块安装失败，请手动安装WireGuard内核模块并重新运行脚本。"
+    exit 1
+  fi
+  
+  # 重新加载WireGuard内核模块
+  sudo modprobe wireguard
+  
+  # 检查WireGuard内核模块是否已加载
+  if ! lsmod | grep wireguard &>/dev/null; then
+    echo "WireGuard内核模块加载失败，请手动加载WireGuard内核模块并重新运行脚本。"
+    exit 1
+  fi
+fi
+
 # 生成服务端私钥和公钥
 server_private_key=$(wg genkey)
 server_public_key=$(echo "$server_private_key" | wg pubkey)
