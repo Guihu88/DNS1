@@ -30,6 +30,9 @@ function install_wireguard() {
 
 # 生成WireGuard配置文件
 function generate_wireguard_config() {
+    # 创建/etc/wireguard文件夹
+    mkdir -p /etc/wireguard
+
     local server_private_key=$(wg genkey)
     local server_public_key=$(echo "$server_private_key" | wg pubkey)
     local server_ip="10.0.0.1/24"
@@ -63,9 +66,6 @@ PersistentKeepalive = 25
 EOF
     
     green "客户端配置文件已生成: /etc/wireguard/client1.conf"
-    
-    # 输出客户端配置信息
-    cat /etc/wireguard/client1.conf
 }
 
 # 启动WireGuard
