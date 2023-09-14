@@ -63,6 +63,9 @@ PersistentKeepalive = 25
 EOF
     
     green "客户端配置文件已生成: /etc/wireguard/client1.conf"
+    
+    # 输出客户端配置信息
+    cat /etc/wireguard/client1.conf
 }
 
 # 启动WireGuard
