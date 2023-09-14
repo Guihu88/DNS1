@@ -38,7 +38,7 @@ Address = 10.0.0.2/24
 DNS = 8.8.8.8
 
 [Peer]
-PublicKey = $(cat /etc/wireguard/wg0.conf | grep "PublicKey" | cut -d " " -f 3)
+PublicKey = $(wg pubkey < /etc/wireguard/wg0.conf | head -n 1)
 AllowedIPs = 0.0.0.0/0, ::/0
 Endpoint = $(curl ifconfig.me):51820
 PersistentKeepalive = 25
