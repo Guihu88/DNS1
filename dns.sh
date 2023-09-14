@@ -58,7 +58,22 @@ wg-quick up wg0
 # 设置开机自启
 systemctl enable wg-quick@wg0
 
-# 输出服务器配置文件
+# 输出客户端配置文件
 cat /etc/wireguard/client.conf
 
-echo "WireGuard配置已完成。客户端配置文件位于 /etc/wireguard/client.conf。"
+# 生成Windows客户端配置文件
+cat <<EOF > /etc/wireguard/client-windows.conf
+[Interface]
+PrivateKey = $client_private_key
+Address = 10.77.0.2/24
+DNS = 8.8.8.8
+MTU = 1380
+
+[Peer]
+PublicKey = $client_public_key
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = 101.36.126.206:58083
+PersistentKeepalive = 25
+EOF
+
+echo "WireGuard配置已完成。客户端配置文件位于 /etc/wireguard/client.conf，Windows客户端配置文件位于 /etc/wireguard/client-windows.conf。"
