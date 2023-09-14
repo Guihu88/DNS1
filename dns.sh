@@ -1,107 +1,84 @@
 #!/bin/bash
-# WireGuard一键安装脚本 for CentOS/Ubuntu/Debian
 
-function green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
-function red(){
-    echo -e "\033[31m\033[01m$1\033[0m"
+function green() {
+    echo -e "\033[32m$1\033[0m"
 }
 
-function check_installation() {
-    if ! command -v wg &>/dev/null; then
-        green "WireGuard未安装，开始安装..."
-        install_wireguard
-    else
-        green "WireGuard已安装，继续..."
-    fi
+function red() {
+    echo -e "\033[31m$1\033[0m"
 }
 
+# 检查是否为root用户
+if [[ $EUID -ne 0 ]]; then
+    red "请以root用户运行此脚本"
+    exit 1
+fi
+
+# 安装WireGuard
 function install_wireguard() {
-    source /etc/os-release
-    if [[ "$ID" == "centos" ]]; then
-        yum install -y epel-release
-        yum install -y wireguard-tools
-    elif [[ "$ID" == "ubuntu" || "$ID" == "debian" ]]; then
+    if [[ -e /etc/debian_version ]]; then
         apt-get update
         apt-get install -y wireguard-tools
+    elif [[ -e /etc/redhat-release ]]; then
+        yum install -y epel-release
+        yum install -y wireguard-tools
     else
         red "不支持的操作系统"
         exit 1
     fi
 }
 
-function get_vps_ip() {
-    # 获取VPS的公共IP地址
-    VPS_IP=$(curl -s https://ipinfo.io/ip)
-}
-
-function configure_wireguard() {
-    green "开始配置WireGuard服务器..."
-
-    # 获取VPS的公共IP地址
-    get_vps_ip
-
-    # 创建WireGuard配置目录
-    mkdir -p /etc/wireguard
-    cd /etc/wireguard
-
-    # 生成服务器端私钥和公钥
-    umask 077
-    wg genkey | tee privatekey | wg pubkey > publickey
-    server_private_key=$(cat privatekey)
-    server_public_key=$(cat publickey)
-
-    # 生成默认的服务器端配置文件
-    cat > wg0.conf <<-EOF
+# 生成WireGuard配置文件
+function generate_wireguard_config() {
+    local server_private_key=$(wg genkey)
+    local server_public_key=$(echo "$server_private_key" | wg pubkey)
+    local server_ip="10.0.0.1/24"
+    local listen_port="51820"
+    
+    # 生成服务端配置文件
+    cat > /etc/wireguard/wg0.conf <<EOF
 [Interface]
 PrivateKey = $server_private_key
-Address = 10.0.0.1/24
-ListenPort = 51820
+Address = $server_ip
+ListenPort = $listen_port
 PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
 PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 
 EOF
 
-    # 启动WireGuard
-    wg-quick up wg0
-    systemctl enable wg-quick@wg0
-
-    green "WireGuard服务器配置完成。"
-
-    # 生成客户端配置文件
-    generate_client_config
-}
-
-function generate_client_config() {
-    green "生成WireGuard客户端配置文件..."
-
-    # 创建客户端配置文件目录
-    mkdir -p ~/wireguard-client-configs
-    cd ~/wireguard-client-configs
-
-    # 生成客户端密钥对
-    umask 077
-    wg genkey | tee client_private_key | wg pubkey > client_public_key
-    client_private_key=$(cat client_private_key)
-    client_public_key=$(cat client_public_key)
-
-    # 生成客户端配置文件
-    cat > client.conf <<-EOF
+    green "服务端配置文件已生成: /etc/wireguard/wg0.conf"
+    
+    # 自动生成客户端配置（示例：CLIENT1）
+    local client_private_key=$(wg genkey)
+    local client_public_key=$(echo "$client_private_key" | wg pubkey)
+    cat > /etc/wireguard/client1.conf <<EOF
 [Interface]
 PrivateKey = $client_private_key
-Address = 10.0.0.2/24
-DNS = 8.8.8.8
+Address = 10.0.0.2/32
 
 [Peer]
 PublicKey = $server_public_key
-Endpoint = $VPS_IP:51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
-
-    green "WireGuard客户端配置文件已生成。请将client.conf文件复制到您的客户端设备上，并使用WireGuard客户端加载。"
+    
+    green "客户端配置文件已生成: /etc/wireguard/client1.conf"
 }
 
-check_installation
-configure_wireguard
+# 启动WireGuard
+function start_wireguard() {
+    systemctl enable wg-quick@wg0
+    systemctl start wg-quick@wg0
+    green "WireGuard已启动"
+}
+
+# 安装WireGuard
+install_wireguard
+
+# 生成WireGuard配置文件
+generate_wireguard_config
+
+# 启动WireGuard
+start_wireguard
+
+green "WireGuard服务器已配置并启动。"
