@@ -28,11 +28,13 @@ function install_wireguard() {
     fi
 }
 
+# 创建WireGuard配置文件目录
+function create_wireguard_directory() {
+    mkdir -p /etc/wireguard
+}
+
 # 生成WireGuard配置文件
 function generate_wireguard_config() {
-    # 创建/etc/wireguard文件夹
-    mkdir -p /etc/wireguard
-
     local server_private_key=$(wg genkey)
     local server_public_key=$(echo "$server_private_key" | wg pubkey)
     local server_ip="10.0.0.1/24"
@@ -77,6 +79,9 @@ function start_wireguard() {
 
 # 安装WireGuard
 install_wireguard
+
+# 创建WireGuard配置文件目录
+create_wireguard_directory
 
 # 生成WireGuard配置文件
 generate_wireguard_config
