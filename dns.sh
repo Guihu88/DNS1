@@ -1,50 +1,64 @@
 #!/bin/bash
 
-# 安装WireGuard工具
-sudo apt update
-sudo apt install -y wireguard-tools
+# 检查是否以root用户运行脚本
+if [ "$EUID" -ne 0 ]
+  then echo "请以root用户或使用sudo运行此脚本"
+  exit
+fi
 
-# 生成WireGuard服务器和客户端密钥对
-sudo wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
+# 安装WireGuard工具
+apt update
+apt install -y wireguard-tools
+
+# 生成WireGuard服务器私钥
+server_private_key=$(wg genkey)
 
 # 创建WireGuard服务器配置文件
-echo "
+cat <<EOF > /etc/wireguard/wg0.conf
 [Interface]
 Address = 10.0.0.1/24
 ListenPort = 51820
-PrivateKey = $(cat /etc/wireguard/privatekey)
+PrivateKey = $server_private_key
 
 [Peer]
 PublicKey = <客户端的公钥>
 AllowedIPs = 0.0.0.0/0, ::/0
 Endpoint = 101.36.126.206:58083
 PersistentKeepalive = 25
-" | sudo tee /etc/wireguard/wg0.conf
+EOF
+
+# 生成WireGuard客户端私钥
+client_private_key=$(wg genkey)
+
+# 生成WireGuard客户端公钥
+client_public_key=$(echo "$client_private_key" | wg pubkey)
 
 # 创建WireGuard客户端配置文件
-echo "
+cat <<EOF > /etc/wireguard/client.conf
 [Interface]
-PrivateKey = <客户端的私钥>
+PrivateKey = $client_private_key
 Address = 10.77.0.2/24
 DNS = 8.8.8.8
 MTU = 1380
 
 [Peer]
-PublicKey = $(cat /etc/wireguard/publickey)
+PublicKey = $client_public_key
 AllowedIPs = 0.0.0.0/0, ::/0
 Endpoint = 101.36.126.206:58083
 PersistentKeepalive = 25
-" | sudo tee /etc/wireguard/client.conf
+EOF
 
 # 启用IPv4转发
-echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
-sudo sysctl -p
+echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+sysctl -p
 
 # 启动WireGuard服务
-sudo wg-quick up wg0
+wg-quick up wg0
 
 # 设置开机自启
-sudo systemctl enable wg-quick@wg0
+systemctl enable wg-quick@wg0
 
 # 输出服务器配置文件
 cat /etc/wireguard/client.conf
+
+echo "WireGuard配置已完成。客户端配置文件位于 /etc/wireguard/client.conf。"
