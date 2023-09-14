@@ -1,4 +1,4 @@
-v#!/bin/bash
+#!/bin/bash
 # WireGuard一键安装脚本 for CentOS/Ubuntu/Debian
 
 function green(){
@@ -107,4 +107,4 @@ EOF
 }
 
 check_installation
-configure_wireguardvvvv
+configure_wireguard
