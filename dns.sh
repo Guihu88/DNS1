@@ -6,6 +6,16 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+# Detect the server's public IP address
+function get_server_ip() {
+    # Use a service like ifconfig.me to fetch the server's public IP
+    SERVER_IP=$(curl -s ifconfig.me)
+    if [[ -z "$SERVER_IP" ]]; then
+        echo "Failed to detect the server's public IP address."
+        exit 1
+    fi
+}
+
 # Install WireGuard
 function install_wireguard() {
     # Check the Linux distribution
@@ -49,7 +59,10 @@ DNS = 8.8.8.8
 MTU = 1420
 EOF
 
-    # Client configuration (sample)
+    # Get the server's public IP address
+    get_server_ip
+
+    # Client configuration
     wg genkey | tee privatekey-client | wg pubkey > publickey-client
     cat > client.conf <<-EOF
 [Interface]
@@ -60,7 +73,7 @@ MTU = 1420
 
 [Peer]
 PublicKey = $(cat publickey)
-Endpoint = your_server_ip:51820
+Endpoint = $SERVER_IP:51820
 AllowedIPs = 0.0.0.0/0, ::0/0
 PersistentKeepalive = 25
 EOF
@@ -77,6 +90,7 @@ EOF
     echo "WireGuard server is running."
     echo "Server configuration: /etc/wireguard/wg0.conf"
     echo "Sample client configuration: /etc/wireguard/client.conf"
+    echo "Server public IP: $SERVER_IP"
 }
 
 # Run the installation and configuration
