@@ -30,6 +30,9 @@ client_private_key=$(wg genkey)
 # 生成WireGuard客户端公钥
 client_public_key=$(echo "$client_private_key" | wg pubkey)
 
+# 获取服务器的公钥
+server_public_key=$(wg pubkey <<< "$server_private_key")
+
 # 创建WireGuard客户端配置文件
 cat <<EOF > /etc/wireguard/client.conf
 [Interface]
@@ -38,7 +41,7 @@ Address = 10.0.0.2/24
 DNS = 8.8.8.8
 
 [Peer]
-PublicKey = $(wg pubkey < /etc/wireguard/wg0.conf | head -n 1)
+PublicKey = $server_public_key
 AllowedIPs = 0.0.0.0/0, ::/0
 Endpoint = $(curl ifconfig.me):51820
 PersistentKeepalive = 25
