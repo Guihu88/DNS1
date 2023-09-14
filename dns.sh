@@ -1,4 +1,12 @@
 #!/bin/bash
+# 替换 /etc/apt/sources.list 内容
+echo "替换 /etc/apt/sources.list 内容"
+cat <<EOF > /etc/apt/sources.list
+deb http://deb.debian.org/debian bullseye main
+deb-src http://deb.debian.org/debian bullseye main
+deb http://deb.debian.org/debian buster-backports main
+EOF
+
 #wireguard onekey script for centos7+/ubuntu/debian
 function blue(){
     echo -e "\033[34m\033[01m$1\033[0m"
