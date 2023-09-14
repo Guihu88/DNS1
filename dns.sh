@@ -6,16 +6,6 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Detect the server's public IP address
-function get_server_ip() {
-    # Use a service like ifconfig.me to fetch the server's public IP
-    SERVER_IP=$(curl -s ifconfig.me)
-    if [[ -z "$SERVER_IP" ]]; then
-        echo "Failed to detect the server's public IP address."
-        exit 1
-    fi
-}
-
 # Install WireGuard
 function install_wireguard() {
     # Check the Linux distribution
@@ -60,7 +50,7 @@ MTU = 1420
 EOF
 
     # Get the server's public IP address
-    get_server_ip
+    SERVER_IP=$(curl -s ifconfig.me)
 
     # Client configuration
     wg genkey | tee privatekey-client | wg pubkey > publickey-client
