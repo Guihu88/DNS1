@@ -165,7 +165,7 @@ cat > /etc/wireguard/client.conf <<-EOF
 PrivateKey = $c1
 Address = 10.77.0.2/24 
 DNS = 8.8.8.8
-MTU = 1420
+MTU = 1380
 [Peer]
 PublicKey = $s2
 Endpoint = $serverip:$port
