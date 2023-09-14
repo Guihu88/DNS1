@@ -30,6 +30,9 @@ client_private_key=$(wg genkey)
 # 生成WireGuard客户端公钥
 client_public_key=$(echo "$client_private_key" | wg pubkey)
 
+# 将客户端公钥保存到文件
+echo "$client_public_key" > /etc/wireguard/client_public_key
+
 # 创建WireGuard客户端配置文件
 cat <<EOF > /etc/wireguard/client.conf
 [Interface]
@@ -45,8 +48,9 @@ Endpoint = 101.36.126.206:51820
 PersistentKeepalive = 25
 EOF
 
-# 将客户端的公钥添加到服务器配置文件
-echo "PublicKey = $client_public_key" >> /etc/wireguard/wg0.conf
+# 将服务器的公钥添加到客户端配置文件
+server_public_key=$(cat /etc/wireguard/wg0.conf | grep "PublicKey" | cut -d " " -f 3)
+sed -i "s/<服务器的公钥>/$server_public_key/g" /etc/wireguard/client.conf
 
 # 启用IPv4转发
 echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
