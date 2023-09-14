@@ -6,17 +6,17 @@ if [[ $EUID -ne 0 ]]; then
    exit 1
 fi
 
-# Update the system
+# Update the system and install necessary packages
 yum update -y
-
-# Install WireGuard packages
 yum install -y epel-release
-yum install -y wireguard-tools
+yum install -y wireguard-tools qrencode
 
-# Enable the WireGuard kernel module
-modprobe wireguard
+# Check if the WireGuard kernel module is loaded
+if ! lsmod | grep wireguard &>/dev/null; then
+   modprobe wireguard
+fi
 
-# Configure WireGuard
+# Create WireGuard configuration file
 cat <<EOF > /etc/wireguard/wg0.conf
 [Interface]
 PrivateKey = <YourServerPrivateKey>
@@ -32,8 +32,12 @@ EOF
 systemctl start wg-quick@wg0
 systemctl enable wg-quick@wg0
 
-# Print QR code for easy client setup
-qrencode -t ansiutf8 < /etc/wireguard/wg0.conf
+# Check if qrencode is installed and display QR code for client configuration
+if command -v qrencode &>/dev/null; then
+   qrencode -t ansiutf8 < /etc/wireguard/wg0.conf
+else
+   echo "qrencode is not installed. You can install it to display QR code for client configuration."
+fi
 
 echo "WireGuard has been successfully installed and configured."
 echo "Make sure to replace '<YourServerPrivateKey>' and '<YourClientPublicKey>' with your actual keys."
