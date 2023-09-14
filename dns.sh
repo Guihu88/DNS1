@@ -1,90 +1,110 @@
 #!/bin/bash
+# WireGuard一键安装脚本 for CentOS/Ubuntu/Debian
 
-# Check for root privileges
-if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root."
-    exit 1
-fi
+function green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
+function red(){
+    echo -e "\033[31m\033[01m$1\033[0m"
+}
 
-# Install WireGuard
-function install_wireguard() {
-    # Check the Linux distribution
-    if [[ -f /etc/os-release ]]; then
-        source /etc/os-release
-        case $ID in
-            debian|ubuntu)
-                apt-get update
-                apt-get install -y wireguard
-                ;;
-            centos)
-                yum install -y epel-release
-                yum install -y wireguard-tools
-                ;;
-            *)
-                echo "Unsupported distribution: $ID"
-                exit 1
-                ;;
-        esac
+function check_installation() {
+    if ! command -v wg &>/dev/null; then
+        green "WireGuard未安装，开始安装..."
+        install_wireguard
     else
-        echo "Unsupported distribution."
+        green "WireGuard已安装，继续..."
+    fi
+}
+
+function install_wireguard() {
+    source /etc/os-release
+    if [[ "$ID" == "centos" ]]; then
+        yum install -y epel-release
+        yum install -y wireguard-tools
+    elif [[ "$ID" == "ubuntu" || "$ID" == "debian" ]]; then
+        apt-get update
+        apt-get install -y wireguard-tools
+    else
+        red "不支持的操作系统"
         exit 1
     fi
 }
 
-# Generate WireGuard configuration
-function generate_config() {
+function get_vps_ip() {
+    # 获取VPS的公共IP地址
+    VPS_IP=$(curl -s https://ipinfo.io/ip)
+}
+
+function configure_wireguard() {
+    green "开始配置WireGuard服务器..."
+
+    # 获取VPS的公共IP地址
+    get_vps_ip
+
+    # 创建WireGuard配置目录
     mkdir -p /etc/wireguard
     cd /etc/wireguard
 
-    # Server configuration
+    # 生成服务器端私钥和公钥
+    umask 077
     wg genkey | tee privatekey | wg pubkey > publickey
+    server_private_key=$(cat privatekey)
+    server_public_key=$(cat publickey)
+
+    # 生成默认的服务器端配置文件
     cat > wg0.conf <<-EOF
 [Interface]
-PrivateKey = $(cat privatekey)
-Address = 10.77.0.1/24
+PrivateKey = $server_private_key
+Address = 10.0.0.1/24
 ListenPort = 51820
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-DNS = 8.8.8.8
-MTU = 1420
-EOF
-
-    # Get the server's public IP address
-    SERVER_IP=$(curl -s ifconfig.me)
-
-    # Client configuration
-    wg genkey | tee privatekey-client | wg pubkey > publickey-client
-    cat > client.conf <<-EOF
-[Interface]
-PrivateKey = $(cat privatekey-client)
-Address = 10.77.0.2/32
-DNS = 8.8.8.8
-MTU = 1420
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
 
 [Peer]
-PublicKey = $(cat publickey)
-Endpoint = $SERVER_IP:51820
-AllowedIPs = 0.0.0.0/0, ::0/0
+PublicKey = $server_public_key
+AllowedIPs = 10.0.0.2/32
+EOF
+
+    # 启动WireGuard
+    wg-quick up wg0
+    systemctl enable wg-quick@wg0
+
+    green "WireGuard服务器配置完成。"
+
+    # 生成客户端配置文件
+    generate_client_config
+}
+
+function generate_client_config() {
+    green "生成WireGuard客户端配置文件..."
+
+    # 创建客户端配置文件目录
+    mkdir -p ~/wireguard-client-configs
+    cd ~/wireguard-client-configs
+
+    # 生成客户端密钥对
+    umask 077
+    wg genkey | tee client_private_key | wg pubkey > client_public_key
+    client_private_key=$(cat client_private_key)
+    client_public_key=$(cat client_public_key)
+
+    # 生成客户端配置文件
+    cat > client.conf <<-EOF
+[Interface]
+PrivateKey = $client_private_key
+Address = 10.0.0.2/24
+DNS = 8.8.8.8
+
+[Peer]
+PublicKey = $server_public_key
+Endpoint = $VPS_IP:51820
+AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
 
-    # Enable IP forwarding
-    echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-wireguard.conf
-    sysctl --system
-
-    # Start WireGuard
-    systemctl enable wg-quick@wg0
-    systemctl start wg-quick@wg0
-
-    # Display configuration
-    echo "WireGuard server is running."
-    echo "Server configuration: /etc/wireguard/wg0.conf"
-    echo "Sample client configuration: /etc/wireguard/client.conf"
-    echo "Server public IP: $SERVER_IP"
+    green "WireGuard客户端配置文件已生成。请将client.conf文件复制到您的客户端设备上，并使用WireGuard客户端加载。"
 }
 
-# Run the installation and configuration
-install_wireguard
-generate_config
-
-echo "WireGuard setup completed."
+check_installation
+configure_wireguardvvvv
