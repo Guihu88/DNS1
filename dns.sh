@@ -1,63 +1,64 @@
 #!/bin/bash
 
-# 检查是否以root用户运行脚本
-if [ "$EUID" -ne 0 ]; then
-  echo "请以root用户或使用sudo运行此脚本"
-  exit
-fi
+function install_wireguard() {
+    # Check if WireGuard is already installed
+    if ! command -v wg &>/dev/null; then
+        # Install WireGuard
+        if [[ -f /etc/os-release ]]; then
+            source /etc/os-release
+            if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
+                apt update
+                apt install -y wireguard
+            elif [[ "$ID" == "centos" ]]; then
+                yum install -y epel-release
+                yum install -y wireguard-tools
+            else
+                echo "Unsupported operating system."
+                exit 1
+            fi
+        else
+            echo "Unsupported operating system."
+            exit 1
+        fi
+    fi
+}
 
-# 安装WireGuard工具
-apt update
-apt install -y wireguard-tools
+function generate_wireguard_config() {
+    mkdir -p /etc/wireguard
+    cd /etc/wireguard || exit
 
-# 生成WireGuard服务器私钥
-server_private_key=$(wg genkey)
+    # Generate server and client keys
+    wg genkey | tee server_privatekey | wg pubkey > server_publickey
+    wg genkey | tee client_privatekey | wg pubkey > client_publickey
 
-# 创建WireGuard服务器配置文件
-cat <<EOF > /etc/wireguard/wg0.conf
+    # Define server and client configuration
+    cat > wg0-server.conf <<EOF
 [Interface]
 Address = 10.0.0.1/24
 ListenPort = 51820
-PrivateKey = $server_private_key
-PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
-
+PrivateKey = $(cat server_privatekey)
 EOF
 
-# 生成WireGuard客户端私钥
-client_private_key=$(wg genkey)
-
-# 生成WireGuard客户端公钥
-client_public_key=$(echo "$client_private_key" | wg pubkey)
-
-# 获取服务器的公钥
-server_public_key=$(wg pubkey <<< "$server_private_key")
-
-# 创建WireGuard客户端配置文件
-cat <<EOF > /etc/wireguard/client.conf
+    cat > wg0-client.conf <<EOF
 [Interface]
-PrivateKey = $client_private_key
+PrivateKey = $(cat client_privatekey)
 Address = 10.0.0.2/24
-DNS = 8.8.8.8
 
 [Peer]
-PublicKey = $server_public_key
-AllowedIPs = 0.0.0.0/0, ::/0
-Endpoint = $(curl ifconfig.me):51820
+PublicKey = $(cat server_publickey)
+Endpoint = your_server_ip:51820  # 请替换 your_server_ip 为您的VPS的实际IP地址
+AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
 
-# 启用IPv4转发
-echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-sysctl -p
+    # Enable IP forwarding
+    echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
+    sysctl -p
 
-# 启动WireGuard服务
-wg-quick up wg0
+    # Start WireGuard
+    wg-quick up wg0-server
+}
 
-# 设置开机自启
-systemctl enable wg-quick@wg0
-
-# 输出客户端配置文件
-cat /etc/wireguard/client.conf
-
-echo "WireGuard配置已完成。客户端配置文件位于 /etc/wireguard/client.conf。"
+# Main script
+install_wireguard
+generate_wireguard_config
