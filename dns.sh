@@ -1,43 +1,50 @@
 #!/bin/bash
 
-# Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   echo "This script must be run as root." 
-   exit 1
-fi
+# 安装WireGuard工具
+sudo apt update
+sudo apt install -y wireguard-tools
 
-# Update the system and install necessary packages
-yum update -y
-yum install -y epel-release
-yum install -y wireguard-tools qrencode
+# 生成WireGuard服务器和客户端密钥对
+sudo wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
 
-# Check if the WireGuard kernel module is loaded
-if ! lsmod | grep wireguard &>/dev/null; then
-   modprobe wireguard
-fi
-
-# Create WireGuard configuration file
-cat <<EOF > /etc/wireguard/wg0.conf
+# 创建WireGuard服务器配置文件
+echo "
 [Interface]
-PrivateKey = <YourServerPrivateKey>
 Address = 10.0.0.1/24
 ListenPort = 51820
+PrivateKey = $(cat /etc/wireguard/privatekey)
 
 [Peer]
-PublicKey = <YourClientPublicKey>
-AllowedIPs = 10.0.0.2/32
-EOF
+PublicKey = <客户端的公钥>
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = 101.36.126.206:58083
+PersistentKeepalive = 25
+" | sudo tee /etc/wireguard/wg0.conf
 
-# Start and enable the WireGuard service
-systemctl start wg-quick@wg0
-systemctl enable wg-quick@wg0
+# 创建WireGuard客户端配置文件
+echo "
+[Interface]
+PrivateKey = <客户端的私钥>
+Address = 10.77.0.2/24
+DNS = 8.8.8.8
+MTU = 1380
 
-# Check if qrencode is installed and display QR code for client configuration
-if command -v qrencode &>/dev/null; then
-   qrencode -t ansiutf8 < /etc/wireguard/wg0.conf
-else
-   echo "qrencode is not installed. You can install it to display QR code for client configuration."
-fi
+[Peer]
+PublicKey = $(cat /etc/wireguard/publickey)
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = 101.36.126.206:58083
+PersistentKeepalive = 25
+" | sudo tee /etc/wireguard/client.conf
 
-echo "WireGuard has been successfully installed and configured."
-echo "Make sure to replace '<YourServerPrivateKey>' and '<YourClientPublicKey>' with your actual keys."
+# 启用IPv4转发
+echo "net.ipv4.ip_forward=1" | sudo tee -a /etc/sysctl.conf
+sudo sysctl -p
+
+# 启动WireGuard服务
+sudo wg-quick up wg0
+
+# 设置开机自启
+sudo systemctl enable wg-quick@wg0
+
+# 输出服务器配置文件
+cat /etc/wireguard/client.conf
