@@ -54,11 +54,12 @@ EOF
     # Enable IP forwarding
     echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
     sysctl -p
-
-    # Start WireGuard
-    wg-quick up wg0-server
 }
 
 # Main script
 install_wireguard
 generate_wireguard_config
+
+# Output client configuration
+echo "Client configuration (wg0-client.conf):"
+cat wg0-client.conf
