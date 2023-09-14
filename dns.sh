@@ -1,67 +1,86 @@
 #!/bin/bash
 
-function green(){
-    echo -e "\033[32m\033[01m$1\033[0m"
-}
+# Check for root privileges
+if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root."
+    exit 1
+fi
 
+# Install WireGuard
 function install_wireguard() {
-    # Install WireGuard
+    # Check the Linux distribution
     if [[ -f /etc/os-release ]]; then
         source /etc/os-release
-        if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
-            apt update
-            apt install -y wireguard
-        elif [[ "$ID" == "centos" ]]; then
-            yum install -y epel-release
-            yum install -y wireguard-tools
-        else
-            echo "Unsupported operating system."
-            exit 1
-        fi
+        case $ID in
+            debian|ubuntu)
+                apt-get update
+                apt-get install -y wireguard
+                ;;
+            centos)
+                yum install -y epel-release
+                yum install -y wireguard-tools
+                ;;
+            *)
+                echo "Unsupported distribution: $ID"
+                exit 1
+                ;;
+        esac
     else
-        echo "Unsupported operating system."
+        echo "Unsupported distribution."
         exit 1
     fi
 }
 
-function generate_wireguard_config() {
+# Generate WireGuard configuration
+function generate_config() {
     mkdir -p /etc/wireguard
-    cd /etc/wireguard || exit
+    cd /etc/wireguard
 
-    # Generate server and client keys
-    wg genkey | tee server_privatekey | wg pubkey > server_publickey
-    wg genkey | tee client_privatekey | wg pubkey > client_publickey
-
-    # Define server and client configuration
-    cat > wg0-server.conf <<EOF
+    # Server configuration
+    wg genkey | tee privatekey | wg pubkey > publickey
+    cat > wg0.conf <<-EOF
 [Interface]
-Address = 10.0.0.1/24
+PrivateKey = $(cat privatekey)
+Address = 10.77.0.1/24
 ListenPort = 51820
-PrivateKey = $(cat server_privatekey)
+PostUp = iptables -A FORWARD -i wg0 -j ACCEPT; iptables -A FORWARD -o wg0 -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT; iptables -D FORWARD -o wg0 -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+DNS = 8.8.8.8
+MTU = 1420
 EOF
 
-    cat > wg0-client.conf <<EOF
+    # Client configuration (sample)
+    wg genkey | tee privatekey-client | wg pubkey > publickey-client
+    cat > client.conf <<-EOF
 [Interface]
-PrivateKey = $(cat client_privatekey)
-Address = 10.0.0.2/24
+PrivateKey = $(cat privatekey-client)
+Address = 10.77.0.2/32
+DNS = 8.8.8.8
+MTU = 1420
 
 [Peer]
-PublicKey = $(cat server_publickey)
-Endpoint = <YOUR_SERVER_IP>:51820
-AllowedIPs = 0.0.0.0/0
+PublicKey = $(cat publickey)
+Endpoint = your_server_ip:51820
+AllowedIPs = 0.0.0.0/0, ::0/0
 PersistentKeepalive = 25
 EOF
 
-    green "配置文件已生成，客户端配置请修改<YOUR_SERVER_IP>为服务器公网IP。"
-}
+    # Enable IP forwarding
+    echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-wireguard.conf
+    sysctl --system
 
-function enable_wireguard() {
+    # Start WireGuard
     systemctl enable wg-quick@wg0
     systemctl start wg-quick@wg0
-    green "WireGuard配置已生效，无需重启。"
+
+    # Display configuration
+    echo "WireGuard server is running."
+    echo "Server configuration: /etc/wireguard/wg0.conf"
+    echo "Sample client configuration: /etc/wireguard/client.conf"
 }
 
-# Main script
+# Run the installation and configuration
 install_wireguard
-generate_wireguard_config
-enable_wireguard
+generate_config
+
+echo "WireGuard setup completed."
