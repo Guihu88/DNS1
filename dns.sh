@@ -1,35 +1,30 @@
 #!/bin/bash
 
+function green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
+
 function install_wireguard() {
-    # Check if WireGuard is already installed
-    if ! command -v wg &>/dev/null; then
-        # Install WireGuard
-        if [[ -f /etc/os-release ]]; then
-            source /etc/os-release
-            if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
-                apt update
-                apt install -y wireguard
-            elif [[ "$ID" == "centos" ]]; then
-                yum install -y epel-release
-                yum install -y wireguard-tools
-            else
-                echo "Unsupported operating system."
-                exit 1
-            fi
+    # Install WireGuard
+    if [[ -f /etc/os-release ]]; then
+        source /etc/os-release
+        if [[ "$ID" == "debian" || "$ID" == "ubuntu" ]]; then
+            apt update
+            apt install -y wireguard
+        elif [[ "$ID" == "centos" ]]; then
+            yum install -y epel-release
+            yum install -y wireguard-tools
         else
             echo "Unsupported operating system."
             exit 1
         fi
+    else
+        echo "Unsupported operating system."
+        exit 1
     fi
 }
 
 function generate_wireguard_config() {
-    local server_ip=$(curl -4 ifconfig.co)
-    if [ -z "$server_ip" ]; then
-        echo "Failed to obtain the server's public IP address."
-        exit 1
-    fi
-
     mkdir -p /etc/wireguard
     cd /etc/wireguard || exit
 
@@ -52,20 +47,21 @@ Address = 10.0.0.2/24
 
 [Peer]
 PublicKey = $(cat server_publickey)
-Endpoint = $server_ip:51820
+Endpoint = <YOUR_SERVER_IP>:51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
 
-    # Enable IP forwarding
-    echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-    sysctl -p
+    green "配置文件已生成，客户端配置请修改<YOUR_SERVER_IP>为服务器公网IP。"
+}
+
+function enable_wireguard() {
+    systemctl enable wg-quick@wg0
+    systemctl start wg-quick@wg0
+    green "WireGuard配置已生效，无需重启。"
 }
 
 # Main script
 install_wireguard
 generate_wireguard_config
-
-# Output client configuration
-echo "Client configuration (wg0-client.conf):"
-cat wg0-client.conf
+enable_wireguard
