@@ -1,32 +1,39 @@
 #!/bin/bash
 
-# 安装Shadowsocks依赖和Shadowsocks-libev
-sudo yum install -y epel-release
-sudo yum install -y shadowsocks-libev
+# Check if running as root
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root." 
+   exit 1
+fi
 
-# 生成随机密码
-random_password=$(date +%s | sha256sum | base64 | head -c 12 ; echo)
+# Update the system
+yum update -y
 
-# 配置Shadowsocks
-cat <<EOF | sudo tee /etc/shadowsocks/config.json
-{
-  "server":"0.0.0.0",
-  "server_port":8388,
-  "password":"$random_password",
-  "method":"aes-256-gcm",
-  "timeout":300
-}
+# Install WireGuard packages
+yum install -y epel-release
+yum install -y wireguard-tools
+
+# Enable the WireGuard kernel module
+modprobe wireguard
+
+# Configure WireGuard
+cat <<EOF > /etc/wireguard/wg0.conf
+[Interface]
+PrivateKey = <YourServerPrivateKey>
+Address = 10.0.0.1/24
+ListenPort = 51820
+
+[Peer]
+PublicKey = <YourClientPublicKey>
+AllowedIPs = 10.0.0.2/32
 EOF
 
-# 启动Shadowsocks服务
-sudo systemctl start shadowsocks-libev
-sudo systemctl enable shadowsocks-libev
+# Start and enable the WireGuard service
+systemctl start wg-quick@wg0
+systemctl enable wg-quick@wg0
 
-# 获取服务器IP地址
-server_ip=$(curl -s ifconfig.me)
+# Print QR code for easy client setup
+qrencode -t ansiutf8 < /etc/wireguard/wg0.conf
 
-echo "Shadowsocks服务器已成功安装和配置！"
-echo "服务器地址: $server_ip"
-echo "服务器端口: 8388"
-echo "密码: $random_password"
-echo "加密方法: aes-256-gcm"
+echo "WireGuard has been successfully installed and configured."
+echo "Make sure to replace '<YourServerPrivateKey>' and '<YourClientPublicKey>' with your actual keys."
