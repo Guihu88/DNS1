@@ -1,4 +1,4 @@
-#!/bin/bash
+v#!/bin/bash
 # WireGuard一键安装脚本 for CentOS/Ubuntu/Debian
 
 function green(){
