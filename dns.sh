@@ -24,6 +24,12 @@ function install_wireguard() {
 }
 
 function generate_wireguard_config() {
+    local server_ip=$(curl -4 ifconfig.co)
+    if [ -z "$server_ip" ]; then
+        echo "Failed to obtain the server's public IP address."
+        exit 1
+    fi
+
     mkdir -p /etc/wireguard
     cd /etc/wireguard || exit
 
@@ -46,7 +52,7 @@ Address = 10.0.0.2/24
 
 [Peer]
 PublicKey = $(cat server_publickey)
-Endpoint = your_server_ip:51820  # 请替换 your_server_ip 为您的VPS的实际IP地址
+Endpoint = $server_ip:51820
 AllowedIPs = 0.0.0.0/0
 PersistentKeepalive = 25
 EOF
