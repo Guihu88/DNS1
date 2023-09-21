@@ -116,12 +116,10 @@ function install_wg(){
         apt-get install -y wireguard
         install_tools "apt-get"
     elif [ "$RELEASE" == "debian" ]; then
-        DEBIAN_FRONTEND="noninteractive" 
         echo "deb http://deb.debian.org/debian buster-backports main" >> /etc/apt/sources.list
         #printf 'Package: *\nPin: release a=unstable\nPin-Priority: 90\n' > /etc/apt/preferences.d/limit-unstable
         apt update
-	apt install -y linux-image-5.8.0-0.bpo.2-cloud-amd64
-	apt install -y wireguard openresolv
+	apt install -y wireguard
 	#apt update
         #apt install -y wireguard
         install_tools "apt"
@@ -178,9 +176,7 @@ EOF
     content=$(cat /etc/wireguard/client.conf)
     green "电脑端请下载/etc/wireguard/client.conf文件，手机端可直接使用软件扫码"
     green "${content}" | qrencode -o - -t UTF8
-    red "注意：本次安装必须重启一次, wireguard才能正常使用" 
-  
-  
+    red "注意：本次安装必须重启一次, wireguard才能正常使用"  
 }
 
 function add_user(){
@@ -251,12 +247,12 @@ function start_menu(){
     red "2. 删除wireguard"
     green "3. 显示默认用户二维码"
     green "4. 增加用户"
-    red "0. 退出"
-   
+    red "0. 退出"    
+  
         check_selinux
         install_wg
         config_wg
-      
+     
 }
 
 start_menu
