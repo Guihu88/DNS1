@@ -178,8 +178,6 @@ EOF
     green "电脑端请下载/etc/wireguard/client.conf文件，手机端可直接使用软件扫码"
     green "${content}" | qrencode -o - -t UTF8
     red "注意：本次安装必须重启一次, wireguard才能正常使用"
-    reboot
-  
 }
 
 function add_user(){
@@ -284,6 +282,4 @@ function start_menu(){
 #start_menu
 check_selinux
 install_wg
-add_user
-
 
