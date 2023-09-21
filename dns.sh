@@ -280,6 +280,7 @@ function start_menu(){
         esac
 }
 #start_menu
-check_selinux
-install_wg
+#check_selinux
+#install_wg
+config_wg
 
