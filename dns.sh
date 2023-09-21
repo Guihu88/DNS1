@@ -178,12 +178,8 @@ EOF
     green "电脑端请下载/etc/wireguard/client.conf文件，手机端可直接使用软件扫码"
     green "${content}" | qrencode -o - -t UTF8
     red "注意：本次安装必须重启一次, wireguard才能正常使用"
-    read -p "是否现在重启 ? [Y/n] :" yn
-    [ -z "${yn}" ] && yn="y"
-    if [[ $yn == [Yy] ]]; then
-        echo -e "VPS 重启中..."
-        reboot
-    fi
+    reboot
+  
 }
 
 function add_user(){
@@ -191,7 +187,7 @@ function add_user(){
     green "=================================="
     green "给新用户起个名字，不能和已有用户重复"
     green "=================================="
-    read -p "请输入用户名：" newname
+    newname=mytodo
     cd /etc/wireguard/
     if [ ! -f "/etc/wireguard/$newname.conf" ]; then
         cp client.conf $newname.conf
@@ -256,6 +252,7 @@ function start_menu(){
     green "4. 增加用户"
     red "0. 退出"
     echo
+    
     read -p "请选择:" num
     case "$num" in
         1)
@@ -284,5 +281,9 @@ function start_menu(){
         ;;
         esac
 }
+#start_menu
+check_selinux
+install_wg
+add_user
 
-start_menu
+
