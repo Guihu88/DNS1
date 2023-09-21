@@ -111,7 +111,6 @@ function install_wg(){
 	dpkg -i *.deb
 	apt-get -y update
         #apt-get install -y software-properties-common
-        apt-get install -y openresolv
         #add-apt-repository -y ppa:wireguard/wireguard
         apt-get install -y wireguard
         install_tools "apt-get"
@@ -248,7 +247,8 @@ function start_menu(){
     green "3. 显示默认用户二维码"
     green "4. 增加用户"
     red "0. 退出"    
-  
+    export DEBIAN_FRONTEND=noninteractive
+
         check_selinux
         install_wg
         config_wg
