@@ -1,49 +1,55 @@
 #!/bin/bash
 
-# 检查是否以root权限运行
-if [ "$EUID" -ne 0 ]; then
-  echo "请以root权限运行此脚本"
-  exit 1
+# CHANGE THESE
+auth_email="linzongzheng136@gmail.com"
+auth_key="6c3fb10ba7efc32b013623e9148f62a8a3a67" # found in cloudflare account settings
+zone_name="wwwcn100.com"
+record_name="ddns.wwwcn100.com"
+
+# MAYBE CHANGE THESE
+ip=$(curl -s http://ipv4.icanhazip.com)
+ip_file="ip.txt"
+id_file="cloudflare.ids"
+log_file="cloudflare.log"
+
+# LOGGER
+log() {
+    if [ "$1" ]; then
+        echo -e "[$(date)] - $1" >> $log_file
+    fi
+}
+
+# SCRIPT START
+log "Check Initiated"
+
+if [ -f $ip_file ]; then
+    old_ip=$(cat $ip_file)
+    if [ $ip == $old_ip ]; then
+        echo "IP has not changed."
+        exit 0
+    fi
 fi
 
-# 设置捕获接口和文件路径
-INTERFACE="eth0"
-CAPTURE_FILE="/tmp/capture_full.pcap"
-UPLOADS_FILE="/tmp/tiktok_uploads.txt"
-BLOCKED_LOG="/tmp/blocked_tiktok_uploads.log"
-
-# 捕获 TikTok 直播流量
-echo "正在捕获流量，请在用户进行 TikTok 直播时运行此脚本..."
-timeout 300s tshark -i "$INTERFACE" -w "$CAPTURE_FILE"
-
-# 分析捕获的流量，找到 TikTok 直播的上传IP和端口
-echo "分析捕获的流量以查找上传流量..."
-tshark -r "$CAPTURE_FILE" -Y 'ip.dst == 152.32.148.67 || ip.src == 152.32.148.67' -T fields -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport -e tls.handshake.extensions_server_name | grep "tiktok" > "$UPLOADS_FILE"
-
-# 检查是否找到相关流量
-if [ ! -s "$UPLOADS_FILE" ]; then
-  echo "未检测到 TikTok 直播的上传流量。"
-  exit 0
+if [ -f $id_file ] && [ $(wc -l $id_file | cut -d " " -f 1) == 2 ]; then
+    zone_identifier=$(head -1 $id_file)
+    record_identifier=$(tail -1 $id_file)
+else
+    zone_identifier=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones?name=$zone_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" | grep -Po '(?<="id":")[^"]*' | head -1 )
+    record_identifier=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records?name=$record_name" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json"  | grep -Po '(?<="id":")[^"]*')
+    echo "$zone_identifier" > $id_file
+    echo "$record_identifier" >> $id_file
 fi
 
-# 解析出需要阻止的IP和端口，并记录到日志文件
-echo "解析并阻止检测到的 TikTok 直播上传流量..."
-echo "阻止的 TikTok 上传流量：" > "$BLOCKED_LOG"
-while IFS= read -r line; do
-  SRC_IP=$(echo $line | awk '{print $1}')
-  DST_IP=$(echo $line | awk '{print $2}')
-  SRC_PORT=$(echo $line | awk '{print $3}')
-  DST_PORT=$(echo $line | awk '{print $4}')
-  
-  # 添加iptables规则来阻止流量
-  iptables -A OUTPUT -p tcp -s "$SRC_IP" --sport "$SRC_PORT" -d "$DST_IP" --dport "$DST_PORT" -j DROP
-  iptables -A OUTPUT -p tcp -s "$DST_IP" --sport "$DST_PORT" -d "$SRC_IP" --dport "$SRC_PORT" -j DROP
+update=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/$zone_identifier/dns_records/$record_identifier" -H "X-Auth-Email: $auth_email" -H "X-Auth-Key: $auth_key" -H "Content-Type: application/json" --data "{\"id\":\"$zone_identifier\",\"type\":\"A\",\"name\":\"$record_name\",\"content\":\"$ip\"}")
 
-  echo "$SRC_IP:$SRC_PORT -> $DST_IP:$DST_PORT" >> "$BLOCKED_LOG"
-  echo "已阻止流量：$SRC_IP:$SRC_PORT -> $DST_IP:$DST_PORT"
-done < "$UPLOADS_FILE"
-
-# 保存iptables规则
-iptables-save > /etc/iptables/rules.v4
-
-echo "TikTok 直播的上传流量已被阻止。所有被阻止的流量记录在 $BLOCKED_LOG 中。"
+if [[ $update == *"\"success\":false"* ]]; then
+    message="API UPDATE FAILED. DUMPING RESULTS:\n$update"
+    log "$message"
+    echo -e "$message"
+    exit 1 
+else
+    message="IP changed to: $ip"
+    echo "$ip" > $ip_file
+    log "$message"
+    echo "$message"
+fi
